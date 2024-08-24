@@ -1,0 +1,132 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation/shell"
+                    xmlns:local="clr-namespace:Laila.MetroWindow.Controls" >
+
+    <SolidColorBrush Color="Purple" x:Key="metroWindowTitleBarBrush" />
+    <SolidColorBrush Color="Red" x:Key="metroWindowBorderBrush" />
+
+    <SolidColorBrush Color="Silver" x:Key="metroWindowInactiveTitleBarBrush" />
+    <SolidColorBrush Color="Gray" x:Key="metroWindowInactiveBorderBrush" />
+
+    <Color x:Key="metroWindowInactiveGlowColor">Gray</Color>
+    <Color x:Key="metroWindowGlowColor">Orange</Color>
+
+    <Style TargetType="TextBlock" x:Key="metroWindowTitleTextStyle">
+        <Setter Property="FontFamily" Value="Segoe UI, Tahoma, Lucida Sans, Verdana" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="Light" />
+        <Setter Property="Foreground" Value="Black" />
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="metroWindowInactiveTitleTextStyle">
+        <Setter Property="FontFamily" Value="Segoe UI, Tahoma, Lucida Sans, Verdana" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="Light" />
+        <Setter Property="Foreground" Value="Gray" />
+    </Style>
+
+    <Style TargetType="Grid" x:Key="metroWindowTitleBarStyle">
+        <Setter Property="Background" Value="{StaticResource metroWindowTitleBarBrush}" />
+    </Style>
+
+    <Style x:Key="metroWindowIconButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="31" />
+        <Setter Property="Height" Value="31" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd" Background="Transparent">
+                        <Image Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="icon"
+                                          Source="{Binding Icon, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MetroWindow}}}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MetroWindow}}}" Value="{x:Null}">
+                            <Setter Property="Visibility" TargetName="icon" Value="Collapsed" />
+                            <Setter Property="Width" Value="5" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="metroWindowButtonStyle" TargetType="Button">
+        <Setter Property="FontFamily" Value="Marlett" />
+        <Setter Property="Width" Value="31" />
+        <Setter Property="Height" Value="31" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd" Background="Transparent">
+                        <Border x:Name="bd2" Background="Transparent">
+                            <TextBlock Style="{DynamicResource metroWindowTitleTextStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="tb"
+                                        FontFamily="Marlett" FontSize="14">
+                                <ContentPresenter />
+                            </TextBlock>
+                        </Border>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MetroWindow}}}" Value="False">
+                            <Setter TargetName="tb" Property="Style" Value="{DynamicResource metroWindowInactiveTitleTextStyle}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Mode=Self}}" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="#11000000" />
+                        </DataTrigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding DoIntegrateMenu, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MetroWindow}}}" Value="True" />
+                                <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Mode=Self}}" Value="True" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource metroWindowBorderBrush}" />
+                        </MultiDataTrigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding DoIntegrateMenu, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MetroWindow}}}" Value="False" />
+                                <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Mode=Self}}" Value="True" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource metroWindowBorderBrush}" />
+                            <Setter TargetName="bd2" Property="Background" Value="#33000000" />
+                        </MultiDataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="metroWindowCloseButtonStyle" TargetType="Button">
+        <Setter Property="FontFamily" Value="Marlett" />
+        <Setter Property="Width" Value="31" />
+        <Setter Property="Height" Value="31" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd" Background="Transparent">
+                        <TextBlock Style="{DynamicResource metroWindowTitleTextStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="tb"
+                                    FontFamily="Marlett" FontSize="14">
+                            <ContentPresenter />
+                        </TextBlock>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MetroWindow}}}" Value="False">
+                            <Setter TargetName="tb" Property="Style" Value="{DynamicResource metroWindowInactiveTitleTextStyle}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Mode=Self}}" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="#77FF0000" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsPressed, RelativeSource={RelativeSource Mode=Self}}" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="Red" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

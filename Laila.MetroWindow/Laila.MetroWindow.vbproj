@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccProvider>SAK</SccProvider>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RootNamespace>Laila.MetroWindow</RootNamespace>
+    <TargetFramework>net6.0-windows</TargetFramework>
+	  <UseWPF>true</UseWPF>
+	  <UseWindowsForms>true</UseWindowsForms>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <Title>Laila.MetroWindow</Title>
+	  <Version>2.0.0</Version>
+	  <Authors>Laïla Blomme</Authors>
+	  <Description>A .NET6 WPF metro window.</Description>
+	  <Copyright>Copyright © 2024 by Laïla Blomme</Copyright>
+	  <PackageProjectUrl>https://sourceforge.net/projects/laila-metrowindow/</PackageProjectUrl>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
+	  <PackageLicenseFile>LICENSE</PackageLicenseFile>
+	  <PackageId>Laila.MetroWindow-Core</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Images\ResizeGrip.png" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="Images\ResizeGrip.png" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<None Include="..\LICENSE">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+</Project>

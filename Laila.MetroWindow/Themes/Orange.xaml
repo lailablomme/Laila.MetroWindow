@@ -1,0 +1,8 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush Color="#FB8633" x:Key="metroWindowTitleBarBrush" />
+    <SolidColorBrush Color="#FB8633" x:Key="metroWindowBorderBrush" />
+    <Color x:Key="metroWindowGlowColor">#FB8633</Color>
+
+</ResourceDictionary>
