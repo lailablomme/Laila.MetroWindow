@@ -40,23 +40,13 @@ Class MainWindow
     Public Overrides Sub OnLoadPosition()
         ' load position from disk
         If File.Exists(Path.Combine(Path.GetTempPath(), POSITION_FILENAME)) Then
-            Dim xml As String = File.ReadAllText(Path.Combine(Path.GetTempPath(), POSITION_FILENAME))
-            Dim xmlBytes As Byte() = System.Text.Encoding.UTF8.GetBytes(xml)
-            Using memoryStream As MemoryStream = New MemoryStream(xmlBytes)
-                Dim serializer As XmlSerializer = New XmlSerializer(GetType(WindowPositionData))
-                Me.Position = serializer.Deserialize(memoryStream)
-            End Using
+            Me.Position = WindowPositionData.Deserialize(File.ReadAllText(Path.Combine(Path.GetTempPath(), POSITION_FILENAME)))
         End If
     End Sub
 
     Public Overrides Sub OnSavePosition()
         ' write position to disk
-        Using memoryStream As MemoryStream = New MemoryStream()
-            Dim serializer As XmlSerializer = New XmlSerializer(GetType(WindowPositionData))
-            serializer.Serialize(memoryStream, Me.Position)
-            Dim xmlBytes As Byte() = memoryStream.ToArray()
-            IO.File.WriteAllText(Path.Combine(Path.GetTempPath(), POSITION_FILENAME), System.Text.Encoding.UTF8.GetString(xmlBytes))
-        End Using
+        IO.File.WriteAllText(Path.Combine(Path.GetTempPath(), POSITION_FILENAME), Me.Position.Serialize())
     End Sub
 
     Private Sub ShowAlternativeWindowButton_Click(sender As Object, e As RoutedEventArgs) Handles ShowAlternativeWindowButton.Click
