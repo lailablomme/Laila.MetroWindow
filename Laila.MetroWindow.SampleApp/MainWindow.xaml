@@ -8,7 +8,7 @@
         mc:Ignorable="d" WindowStartupLocation="CenterScreen"
         Title="MainWindow" Height="450" Width="800"
         Icon="Windows.ico"
-        ResizeMode="CanResizeWithGrip" 
+        ResizeMode="CanResizeWithGrip" DoIntegrateMenu="True"
         Loaded="MetroWindow_Loaded" Background="#F0F0F0">
     <Grid>
         <Grid.RowDefinitions>
