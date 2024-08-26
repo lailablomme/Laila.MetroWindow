@@ -6,7 +6,7 @@
                 xmlns:mw="clr-namespace:Laila.MetroWindow.Controls;assembly=Laila.MetroWindow"
                 xmlns:local="clr-namespace:Laila.MetroWindow.SampleApp"
                 xmlns:converters="clr-namespace:Laila.MetroWindow.Converters;assembly=Laila.MetroWindow"
-                mc:Ignorable="d" Icon="Windows.ico" Loaded="AlternativeWindow_Loaded" WindowStartupLocation="CenterOwner"
+                mc:Ignorable="d" Loaded="AlternativeWindow_Loaded" WindowStartupLocation="CenterOwner"
                 Title="AlternativeWindow" Height="350" Width="500">
     <mw:MetroWindow.Resources>
         <ResourceDictionary>
@@ -24,7 +24,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Menu Grid.Row="0">
+        <!--<Menu Grid.Row="0">
             <MenuItem Header="Test">
                 <MenuItem Header="One" />
                 <MenuItem Header="Two" />
@@ -35,7 +35,7 @@
                 <MenuItem Header="Five" />
                 <MenuItem Header="Six" />
             </MenuItem>
-        </Menu>
+        </Menu>-->
 
         <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock Foreground="#41B1E1" FontSize="55" FontFamily="Segoe UI Light" TextAlignment="Center">Laïla</TextBlock>

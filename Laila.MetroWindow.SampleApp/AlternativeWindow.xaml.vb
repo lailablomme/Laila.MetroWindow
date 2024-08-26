@@ -25,9 +25,9 @@ Public Class AlternativeWindow
                       End Function
         }
 
-        Me.LeftButtons = New ObservableCollection(Of Data.ButtonData) From {
-            undoButton
-        }
+        'Me.LeftButtons = New ObservableCollection(Of Data.ButtonData) From {
+        '    undoButton
+        '}
         Me.RightButtons = New ObservableCollection(Of Data.ButtonData) From {
             helpButton, infoButton
         }

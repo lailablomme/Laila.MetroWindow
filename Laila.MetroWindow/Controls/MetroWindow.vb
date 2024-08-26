@@ -182,22 +182,22 @@ Namespace Controls
                         Sub()
                             Me.CenterTitle()
                         End Sub
-
-                    Application.Current.Dispatcher.Invoke(
-                        Sub()
-                            Me.CenterTitle()
-                        End Sub, Threading.DispatcherPriority.Loaded)
                 End If
+
+                Application.Current.Dispatcher.Invoke(
+                    Sub()
+                        Me.CenterTitle()
+                    End Sub, Threading.DispatcherPriority.Loaded)
             End If
         End Sub
 
         Private Sub CenterTitle()
             If Me.DoIntegrateMenu AndAlso Not _menuPlaceHolder Is Nothing AndAlso Not _textBlock Is Nothing Then
                 Dim p As Point = _menuPlaceHolder.TransformToAncestor(Me).Transform(New Point(0, 0))
-                Dim leftCentered As Double = Me.ActualWidth / 2 - _textBlock.ActualWidth / 2
+                Dim leftCentered As Double = (Me.ActualWidth - _textBlock.ActualWidth) / 2
                 Dim diff As Double = leftCentered - p.X - _menuPlaceHolder.ActualWidth
                 If diff < 0 Then diff = 0
-                _textBlock.Margin = New Thickness(diff, 0, 0, 0)
+                _textBlock.Margin = New Thickness(diff, _textBlock.Margin.Top, _textBlock.Margin.Right, _textBlock.Margin.Bottom)
             End If
         End Sub
 
@@ -346,10 +346,16 @@ Namespace Controls
         End Sub
 
         Protected Sub SetChromeWindow()
+            Dim border As Double = 0
+            If Me.GlowStyle = GlowStyle.Glowing Then
+                border = Me.GlowSize
+            ElseIf Me.GlowStyle = GlowStyle.Shadow Then
+                border = Me.GlowSize / 2
+            End If
             SetValue(System.Windows.Shell.WindowChrome.WindowChromeProperty,
                 New System.Windows.Shell.WindowChrome() With {
                      .CaptionHeight = Me.CaptionHeight,
-                     .ResizeBorderThickness = New Thickness(10),
+                     .ResizeBorderThickness = New Thickness(10 + border),
                      .CornerRadius = New CornerRadius(0),
                      .GlassFrameThickness = New Thickness(0)
                 })
@@ -367,10 +373,12 @@ Namespace Controls
             _maximizeRestoreButton = Me.Template.FindName("PART_MaximizeRestoreButton", Me)
             _closeButton = Me.Template.FindName("PART_CloseButton", Me)
 
-            AddHandler _textBlock.SizeChanged,
-                Sub()
-                    Me.CenterTitle()
-                End Sub
+            If Not _textBlock Is Nothing Then
+                AddHandler _textBlock.SizeChanged,
+                    Sub()
+                        Me.CenterTitle()
+                    End Sub
+            End If
 
             If Not _titleBar Is Nothing Then
                 _titleBar.Focus()

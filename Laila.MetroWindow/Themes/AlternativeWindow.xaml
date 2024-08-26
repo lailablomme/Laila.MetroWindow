@@ -6,7 +6,7 @@
         <GradientStop Color="#6641B1E1" Offset="0.0" />
         <GradientStop Color="#CC41B1E1" Offset="1" />
     </LinearGradientBrush>
-    <SolidColorBrush Color="#41B1E1" x:Key="metroWindowTitleBarBorderBrush" />
+    <SolidColorBrush Color="Blue" x:Key="metroWindowTitleBarBorderBrush" />
     <SolidColorBrush Color="Gray" x:Key="metroWindowBorderBrush" />
 
     <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1" x:Key="metroWindowInactiveTitleBarBrush">
@@ -22,7 +22,7 @@
         <GradientStop Color="#3341B1E1" Offset="0.0" />
         <GradientStop Color="#9941B1E1" Offset="1" />
     </LinearGradientBrush>
-    <SolidColorBrush Color="#41B1E1" x:Key="metroWindowButtonPressedBorderBrush" />
+    <SolidColorBrush Color="Blue" x:Key="metroWindowButtonPressedBorderBrush" />
 
     <Color x:Key="metroWindowInactiveGlowColor">Gray</Color>
     <Color x:Key="metroWindowGlowColor">Black</Color>
@@ -41,10 +41,35 @@
         <Setter Property="Foreground" Value="Gray" />
     </Style>
 
+    <Style x:Key="metroWindowIconButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Margin" Value="4,0,3,0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd" Background="Transparent">
+                        <Image Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="icon"
+                                          Source="{Binding Icon, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MetroWindow}}}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MetroWindow}}}" Value="{x:Null}">
+                            <Setter Property="Visibility" TargetName="icon" Value="Collapsed" />
+                            <Setter Property="Width" Value="0" />
+                            <Setter Property="Margin" Value="4,0,0,0" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="metroWindowButtonStyle" TargetType="Button">
         <Setter Property="FontFamily" Value="Marlett" />
-        <Setter Property="Width" Value="25" />
-        <Setter Property="Height" Value="25" />
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="24" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
         <Setter Property="Template">
@@ -76,8 +101,8 @@
     
     <Style x:Key="metroWindowCloseButtonStyle" TargetType="Button">
         <Setter Property="FontFamily" Value="Marlett" />
-        <Setter Property="Width" Value="25" />
-        <Setter Property="Height" Value="25" />
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="24" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
         <Setter Property="Template">
@@ -130,6 +155,7 @@
         <Setter Property="GlowColor" Value="{DynamicResource metroWindowGlowColor}" />
         <Setter Property="GlowSize" Value="10" />
         <Setter Property="GlowStyle" Value="Shadow" />
+        <Setter Property="CaptionHeight" Value="28" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:MetroWindow}">
@@ -158,8 +184,8 @@
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
 
-                                <ContentControl x:Name="PART_TitleBar" HorizontalAlignment="Stretch" Margin="1,1,0,0" Background="Transparent">
-                                    <Grid Grid.Row="0" x:Name="PART_TitleBarGrid" VerticalAlignment="Center" Background="Transparent">
+                                <ContentControl x:Name="PART_TitleBar" HorizontalAlignment="Stretch" Background="Transparent">
+                                    <Grid Grid.Row="0" x:Name="PART_TitleBarGrid" VerticalAlignment="Center" Background="Transparent" Height="24" Margin="0,4,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
@@ -172,7 +198,17 @@
                                         <Button Style="{DynamicResource metroWindowIconButtonStyle}" 
                                                 x:Name="PART_IconButton" WindowChrome.IsHitTestVisibleInChrome="True">0</Button>
 
-                                        <ItemsControl Grid.Column="1" ItemsSource="{TemplateBinding LeftButtons}" Margin="0,-1,0,0">
+                                        <ItemsControl Grid.Column="1" ItemsSource="{TemplateBinding LeftButtons}" x:Name="itemsControlLeftButtons">
+                                            <ItemsControl.Style>
+                                                <Style>
+                                                    <Setter Property="ItemsControl.Margin" Value="0,0,3,0" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ActualWidth, ElementName=itemsControlLeftButtons}" Value="0">
+                                                            <Setter Property="ItemsControl.Margin" Value="0" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ItemsControl.Style>
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <StackPanel Orientation="Horizontal" />
@@ -193,7 +229,7 @@
                                                         </Grid.Style>
                                                         <Button IsEnabled="{Binding IsEnabled}" 
                                                                 Style="{DynamicResource metroWindowButtonStyle}" 
-                                                                Command="{Binding ActionCommand}" Margin="0,4,0,2"
+                                                                Command="{Binding ActionCommand}" Margin="0,0,0,0"
                                                                 WindowChrome.IsHitTestVisibleInChrome="True">
                                                             <Image Source="{Binding InternalImage}" Width="16" Height="16">
                                                                 <Image.Style>
@@ -216,13 +252,13 @@
                                         <Grid Grid.Column="2" HorizontalAlignment="Left" x:Name="PART_MenuPlaceHolder" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True"/>
 
                                         <Border CornerRadius="5" BorderThickness="1" x:Name="PART_TitleBarGrip" BorderBrush="{DynamicResource metroWindowTitleBarBorderBrush}" 
-                                                    Grid.Column="3" IsHitTestVisible="False" Margin="-1,4,-4,2" Background="{DynamicResource metroWindowTitleBarBrush}" />
+                                                    Grid.Column="3" IsHitTestVisible="False" Margin="0,0,-4,0" Background="{DynamicResource metroWindowTitleBarBrush}" />
 
-                                        <TextBlock Grid.Column="3" Style="{DynamicResource metroWindowTitleTextStyle}" x:Name="PART_Text" Margin="5,-1,0,0"
+                                        <TextBlock Grid.Column="3" Style="{DynamicResource metroWindowTitleTextStyle}" x:Name="PART_Text" Margin="5,0,0,0" Height="24"
                                                 Text="{Binding Title, RelativeSource={RelativeSource Mode=TemplatedParent}}" HorizontalAlignment="Left"
-                                                IsHitTestVisible="False" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                IsHitTestVisible="False" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
 
-                                        <ItemsControl Grid.Column="4" ItemsSource="{TemplateBinding RightButtons}" Margin="7,-1,0,0">
+                                        <ItemsControl Grid.Column="4" ItemsSource="{TemplateBinding RightButtons}" Margin="7,0,0,0">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <StackPanel Orientation="Horizontal" />
@@ -241,7 +277,7 @@
                                                                 </Style.Triggers>
                                                             </Style>
                                                         </Grid.Style>
-                                                        <Button IsEnabled="{Binding IsEnabled}" Margin="0,4,0,2" 
+                                                        <Button IsEnabled="{Binding IsEnabled}" Margin="0,0,0,0" 
                                                             Style="{DynamicResource metroWindowButtonStyle}" 
                                                             Command="{Binding ActionCommand}"
                                                             WindowChrome.IsHitTestVisibleInChrome="True">
@@ -263,7 +299,7 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
 
-                                        <StackPanel Grid.Column="5" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True" Margin="1,3,5,2">
+                                        <StackPanel Grid.Column="5" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True" Margin="0,0,4,0">
                                             <Button Style="{DynamicResource metroWindowButtonStyle}"
                                                 x:Name="PART_MinimizeButton">0</Button>
                                             <Button Style="{DynamicResource metroWindowButtonStyle}"
