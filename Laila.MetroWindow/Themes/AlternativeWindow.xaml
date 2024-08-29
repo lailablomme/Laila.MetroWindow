@@ -313,19 +313,9 @@
                                 <ContentPresenter Grid.Row="1" Margin="1,0,1,1"
                                           Content="{Binding Content, RelativeSource={RelativeSource Mode=TemplatedParent}}" />
 
-                                <Grid Grid.Row="1">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <Image Grid.Column="1" Grid.Row="1" x:Name="PART_SizeGrip" Visibility="Collapsed" IsHitTestVisible="False"
-                                            Source="pack://application:,,,/Laila.MetroWindow;component/Images/ResizeGrip.png" Opacity="0.75" Margin="3" Width="10" Height="10" />
-                                </Grid>
+                                <Image Grid.Row="1" x:Name="PART_SizeGrip" Visibility="Collapsed" IsHitTestVisible="False"
+                                    Source="pack://application:,,,/Laila.MetroWindow;component/Images/ResizeGrip.png" 
+                                       Opacity="0.75" Margin="3" Width="10" Height="10" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
                             </Grid>
                         </Border>
                     </Grid>
@@ -348,6 +338,13 @@
                                     <DropShadowEffect Opacity="0.5" BlurRadius="{Binding Path=GlowSize, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource borderSizeConverter}}" ShadowDepth="{TemplateBinding GlowSize}" Color="{Binding Path=GlowColor, RelativeSource={RelativeSource TemplatedParent}}" />
                                 </Setter.Value>
                             </Setter>
+                        </Trigger>
+                        <Trigger Property="GlowStyle" Value="None">
+                            <Setter Property="Effect" TargetName="PART_MainBorder" Value="{x:Null}" />
+                            <Setter Property="Width" TargetName="col0" Value="0" />
+                            <Setter Property="Width" TargetName="col2" Value="0" />
+                            <Setter Property="Height" TargetName="row0" Value="0" />
+                            <Setter Property="Height" TargetName="row2" Value="0" />
                         </Trigger>
                         <Trigger Property="WindowState" Value="Maximized">
                             <Setter Property="Visibility" TargetName="PART_SizeGrip" Value="Collapsed" />

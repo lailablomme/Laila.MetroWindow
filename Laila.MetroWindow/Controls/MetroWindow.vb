@@ -1,4 +1,5 @@
 ﻿Imports System.Collections.ObjectModel
+Imports System.Collections.Specialized
 Imports System.Globalization
 Imports System.Windows
 Imports System.Windows.Controls
@@ -107,7 +108,16 @@ Namespace Controls
             Me.DefaultStyleKey = GetType(MetroWindow)
             Me.Language = XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)
 
-            AddHandler Me.LayoutUpdated, AddressOf OnLayoutUpdated
+            AddHandler Me.PreviewMouseDown,
+                Sub(s As Object, e As MouseButtonEventArgs)
+                    Dim i As Integer = 9
+                End Sub
+
+            AddHandler Me.Loaded,
+                Sub(sender As Object, e As EventArgs)
+                    integrateMenu()
+                    Me.CenterTitle()
+                End Sub
 
             AddHandler Me.SizeChanged,
                 Sub(sender2 As Object, e2 As EventArgs)
@@ -126,6 +136,8 @@ Namespace Controls
                         Dim s As Forms.Screen = Forms.Screen.FromHandle(hWnd)
                         System.Windows.Application.Current.Dispatcher.BeginInvoke(
                             Sub()
+                                Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
+                                Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
                                 If Me.Top + Me.Height > s.WorkingArea.Bottom / (g.DpiY / 96.0) Then
                                     Me.Top = s.WorkingArea.Bottom / (g.DpiY / 96.0) - Me.Height
                                 End If
@@ -145,23 +157,15 @@ Namespace Controls
                 End Sub
         End Sub
 
-        Private Sub OnLayoutUpdated(sender As Object, e As EventArgs)
-            If Not _isMenuIntegrated AndAlso Me.DoIntegrateMenu AndAlso Not _menuPlaceHolder Is Nothing Then
-                Dim children As IEnumerable(Of Control) = FindVisualChildren(Of Control)(Me)
-                For Each child In children
-                    RemoveHandler child.LayoutUpdated, AddressOf OnLayoutUpdated
-                    AddHandler child.LayoutUpdated, AddressOf OnLayoutUpdated
-                Next
+        Private Sub buttonCollectionChanged(sender As Object, e As NotifyCollectionChangedEventArgs)
+            Me.CenterTitle()
+        End Sub
 
+        Private Sub integrateMenu()
+            If Not _isMenuIntegrated AndAlso Me.DoIntegrateMenu AndAlso Not _menuPlaceHolder Is Nothing Then
                 Dim menus As IEnumerable(Of Menu) = FindVisualChildren(Of Menu)(Me)
                 If menus.Count > 0 Then
                     _isMenuIntegrated = True
-
-                    ' unhook
-                    children = FindVisualChildren(Of Control)(Me)
-                    For Each child In children
-                        RemoveHandler child.LayoutUpdated, AddressOf OnLayoutUpdated
-                    Next
 
                     ' integrate menu
                     Dim m As Menu = menus(0)
@@ -183,11 +187,6 @@ Namespace Controls
                             Me.CenterTitle()
                         End Sub
                 End If
-
-                Application.Current.Dispatcher.Invoke(
-                    Sub()
-                        Me.CenterTitle()
-                    End Sub, Threading.DispatcherPriority.Loaded)
             End If
         End Sub
 
@@ -219,6 +218,22 @@ Namespace Controls
 
             Me.SetChromeWindow()
 
+            ' help size to content a hand
+            _originalSizeToContent = Me.SizeToContent
+            If Me.SizeToContent <> SizeToContent.Manual Then
+                _rootGrid.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
+                Dim size As Size = _rootGrid.DesiredSize
+                Me.SizeToContent = SizeToContent.Manual
+                If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Width Then
+                    Me.Width = size.Width
+                End If
+                If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Height Then
+                    Me.Height = size.Height
+                End If
+
+                Me.SizeToContent = _originalSizeToContent
+            End If
+
             ' window startup location
             Dim newLeft As Double, newTop As Double, s As Forms.Screen, hWnd As IntPtr, g As System.Drawing.Graphics
             If Me.WindowStartupLocation = WindowStartupLocation.CenterOwner AndAlso Not Me.Owner Is Nothing AndAlso Me.Owner.WindowState = WindowState.Normal Then
@@ -240,6 +255,24 @@ Namespace Controls
                 ' manual
                 newLeft = Me.Left
                 newTop = Me.Top
+            End If
+
+            Me.Left = newLeft
+            Me.Top = newTop
+
+            hWnd = New WindowInteropHelper(Me).Handle
+            s = Forms.Screen.FromHandle(hWnd)
+            g = System.Drawing.Graphics.FromHwnd(hWnd)
+
+            If Me.Left < s.WorkingArea.Left / (g.DpiX / 96.0) Then
+                Me.Left = s.WorkingArea.Left / (g.DpiX / 96.0)
+            End If
+            If Me.Top < s.WorkingArea.Top / (g.DpiX / 96.0) Then
+                Me.Top = s.WorkingArea.Top / (g.DpiX / 96.0)
+            End If
+            If Not (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
+                Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
+                Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
             End If
 
             Me.OnLoadPosition()
@@ -285,22 +318,6 @@ Namespace Controls
 
             ' start recording position
             _dontUpdatePosition = False
-
-            ' help size to content a hand
-            _originalSizeToContent = Me.SizeToContent
-            If Me.SizeToContent <> SizeToContent.Manual Then
-                _rootGrid.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
-                Dim size As Size = _rootGrid.DesiredSize
-                Me.SizeToContent = SizeToContent.Manual
-                If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Width Then
-                    Me.Width = size.Width
-                End If
-                If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Height Then
-                    Me.Height = size.Height
-                End If
-
-                Me.SizeToContent = _originalSizeToContent
-            End If
 
             Me.CenterTitle()
 
@@ -352,12 +369,14 @@ Namespace Controls
             ElseIf Me.GlowStyle = GlowStyle.Shadow Then
                 border = Me.GlowSize / 2
             End If
+
             SetValue(System.Windows.Shell.WindowChrome.WindowChromeProperty,
                 New System.Windows.Shell.WindowChrome() With {
-                     .CaptionHeight = Me.CaptionHeight,
-                     .ResizeBorderThickness = New Thickness(10 + border),
-                     .CornerRadius = New CornerRadius(0),
-                     .GlassFrameThickness = New Thickness(0)
+                    .CaptionHeight = Me.CaptionHeight,
+                    .ResizeBorderThickness = If(Me.WindowState = WindowState.Maximized, New Thickness(5),
+                        If(Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip, New Thickness(7 + border), New Thickness(0))),
+                    .CornerRadius = New CornerRadius(0),
+                    .GlassFrameThickness = If(Me.GlowStyle = GlowStyle.None, New Thickness(0, 0, 0, 1), New Thickness(0))
                 })
         End Sub
 
@@ -452,6 +471,8 @@ Namespace Controls
         End Sub
 
         Protected Overrides Sub OnStateChanged(e As EventArgs)
+            SetChromeWindow()
+
             ' szve state
             If Not _dontUpdatePosition Then
                 If Me.WindowState <> WindowState.Normal Then
@@ -470,13 +491,15 @@ Namespace Controls
                     margin = New Thickness(4)
                 End If
 
-                Dim currentScreen As System.Windows.Forms.Screen = System.Windows.Forms.Screen.FromHandle(New WindowInteropHelper(Me).Handle)
-                Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwndInternal(New WindowInteropHelper(Me).Handle)
-                margin = New Thickness(
+                If Me.WindowStyle = WindowStyle.None Then
+                    Dim currentScreen As System.Windows.Forms.Screen = System.Windows.Forms.Screen.FromHandle(New WindowInteropHelper(Me).Handle)
+                    Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwndInternal(New WindowInteropHelper(Me).Handle)
+                    margin = New Thickness(
                      (currentScreen.WorkingArea.Left - currentScreen.Bounds.Left) / (g.DpiY / 96.0) + margin.Left,
                      (currentScreen.WorkingArea.Top - currentScreen.Bounds.Top) / (g.DpiY / 96.0) + margin.Top,
                      (currentScreen.Bounds.Right - currentScreen.WorkingArea.Right) / (g.DpiY / 96.0) + margin.Right,
                      (currentScreen.Bounds.Bottom - currentScreen.WorkingArea.Bottom) / (g.DpiY / 96.0) + margin.Bottom)
+                End If
 
                 If Not _rootGrid Is Nothing Then
                     _rootGrid.Margin = margin

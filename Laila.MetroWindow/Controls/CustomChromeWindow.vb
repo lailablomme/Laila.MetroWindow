@@ -8,6 +8,8 @@ Namespace Controls
     Public Class CustomChromeWindow
         Inherits Window
 
+        Private _originalTopMost As Boolean
+
         Public Sub Minimize()
             If Me.ResizeMode <> ResizeMode.NoResize Then
                 SystemCommands.MinimizeWindow(Me)
@@ -36,6 +38,7 @@ Namespace Controls
                 While Not deepOwner.Owner Is Nothing
                     deepOwner = deepOwner.Owner
                 End While
+                _originalTopMost = deepOwner.Topmost
                 deepOwner.Topmost = True
             End If
         End Sub
@@ -48,7 +51,9 @@ Namespace Controls
             While Not deepOwner.Owner Is Nothing
                 deepOwner = deepOwner.Owner
             End While
-            deepOwner.Topmost = False
+            If _originalTopMost = False Then
+                deepOwner.Topmost = False
+            End If
         End Sub
     End Class
 End Namespace
