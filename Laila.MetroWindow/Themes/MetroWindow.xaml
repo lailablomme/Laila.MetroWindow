@@ -205,6 +205,10 @@
                         <DataTrigger Binding="{Binding DoIntegrateMenu, RelativeSource={RelativeSource Mode=Self}}" Value="True">
                             <Setter Property="Background" TargetName="PART_TitleBarGrid" Value="Transparent" />
                         </DataTrigger>
+                        <DataTrigger Binding="{Binding DoShowChrome, RelativeSource={RelativeSource Mode=Self}}" Value="False">
+                            <Setter Property="Visibility" TargetName="PART_TitleBar" Value="Collapsed" />
+                            <Setter Property="BorderThickness" TargetName="PART_MainBorder" Value="0" />
+                        </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

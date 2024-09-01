@@ -4,9 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:mw="clr-namespace:Laila.MetroWindow.Controls;assembly=Laila.MetroWindow"
-        xmlns:local="clr-namespace:Laila.MetroWindow.SampleApp"
-        mc:Ignorable="d" WindowStartupLocation="CenterScreen"
-        Title="MainWindow" Height="450" Width="800"
+        xmlns:local="clr-namespace:Laila.MetroWindow.SampleApp" 
+        mc:Ignorable="d" WindowStartupLocation="CenterScreen" 
+        Title="MainWindow" Height="450" Width="800" 
         Icon="Windows.ico"
         ResizeMode="CanResizeWithGrip" DoIntegrateMenu="True"
         Loaded="MetroWindow_Loaded" Background="#F0F0F0">
@@ -33,6 +33,7 @@
             <TextBlock Foreground="HotPink" FontSize="55" FontFamily="Segoe UI Light" TextAlignment="Center">Laïla</TextBlock>
             <TextBox Width="100" x:Name="textBox" />
             <Button x:Name="ShowAlternativeWindowButton" Margin="0,20,0,0">Show alternative window</Button>
+            <Button x:Name="CloseWindow" Margin="0,20,0,0">Close window</Button>
         </StackPanel>
     </Grid>
 </mw:MetroWindow>

@@ -19,6 +19,7 @@ Namespace Controls
         Public Shared ReadOnly GlowSizeProperty As DependencyProperty = DependencyProperty.Register("GlowSize", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(15), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly CaptionHeightProperty As DependencyProperty = DependencyProperty.Register("CaptionHeight", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(31), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly DoIntegrateMenuProperty As DependencyProperty = DependencyProperty.Register("DoIntegrateMenu", GetType(Boolean), GetType(MetroWindow), New FrameworkPropertyMetadata(True, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
+        Public Shared ReadOnly DoShowChromeProperty As DependencyProperty = DependencyProperty.Register("DoShowChrome", GetType(Boolean), GetType(MetroWindow), New FrameworkPropertyMetadata(True, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly LeftButtonsProperty As DependencyProperty = DependencyProperty.Register("LeftButtons", GetType(ObservableCollection(Of ButtonData)), GetType(MetroWindow), New FrameworkPropertyMetadata(Nothing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly RightButtonsProperty As DependencyProperty = DependencyProperty.Register("RightButtons", GetType(ObservableCollection(Of ButtonData)), GetType(MetroWindow), New FrameworkPropertyMetadata(Nothing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
 
@@ -46,6 +47,15 @@ Namespace Controls
             End Get
             Set(ByVal value As Boolean)
                 SetValue(DoIntegrateMenuProperty, value)
+            End Set
+        End Property
+
+        Public Property DoShowChrome() As Boolean
+            Get
+                Return GetValue(DoShowChromeProperty)
+            End Get
+            Set(ByVal value As Boolean)
+                SetValue(DoShowChromeProperty, value)
             End Set
         End Property
 
@@ -108,33 +118,31 @@ Namespace Controls
             Me.DefaultStyleKey = GetType(MetroWindow)
             Me.Language = XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)
 
-            AddHandler Me.PreviewMouseDown,
-                Sub(s As Object, e As MouseButtonEventArgs)
-                    Dim i As Integer = 9
-                End Sub
-
             AddHandler Me.Loaded,
                 Sub(sender As Object, e As EventArgs)
-                    integrateMenu()
-                    Me.CenterTitle()
+                    If Me.DoShowChrome Then
+                        integrateMenu()
+                        Me.CenterTitle()
+                    End If
                 End Sub
 
             AddHandler Me.SizeChanged,
                 Sub(sender2 As Object, e2 As EventArgs)
-                    ' save size
-                    If Me.WindowState = WindowState.Normal AndAlso Not _dontUpdatePosition Then
-                        _previousPosition = _position.Clone()
-                        _position.Width = Me.Width
-                        _position.Height = Me.Height
-                    End If
+                    If Me.DoShowChrome Then
+                        ' save size
+                        If Me.WindowState = WindowState.Normal AndAlso Not _dontUpdatePosition Then
+                            _previousPosition = _position.Clone()
+                            _position.Width = Me.Width
+                            _position.Height = Me.Height
+                        End If
 
-                    If Not _noPositionCorrection _
+                        If Not _noPositionCorrection _
                         AndAlso Not (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
-                        ' keep window within this screen
-                        Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
-                        Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
-                        Dim s As Forms.Screen = Forms.Screen.FromHandle(hWnd)
-                        System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                            ' keep window within this screen
+                            Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
+                            Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
+                            Dim s As Forms.Screen = Forms.Screen.FromHandle(hWnd)
+                            System.Windows.Application.Current.Dispatcher.BeginInvoke(
                             Sub()
                                 Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
                                 Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
@@ -145,15 +153,16 @@ Namespace Controls
                                     Me.Left = s.WorkingArea.Right / (g.DpiY / 96.0) - Me.Width
                                 End If
                             End Sub)
-                    End If
-                    _noPositionCorrection = False
+                        End If
+                        _noPositionCorrection = False
 
-                    Me.CenterTitle()
+                        Me.CenterTitle()
+                    End If
                 End Sub
 
             AddHandler Me.Closed,
                 Sub(sender As Object, e As EventArgs)
-                    Me.OnSavePosition()
+                    If Me.DoShowChrome Then Me.OnSavePosition()
                 End Sub
         End Sub
 
@@ -191,7 +200,7 @@ Namespace Controls
         End Sub
 
         Private Sub CenterTitle()
-            If Me.DoIntegrateMenu AndAlso Not _menuPlaceHolder Is Nothing AndAlso Not _textBlock Is Nothing Then
+            If Me.DoIntegrateMenu AndAlso Not _menuPlaceHolder Is Nothing AndAlso Not _textBlock Is Nothing AndAlso Me.DoShowChrome Then
                 Dim p As Point = _menuPlaceHolder.TransformToAncestor(Me).Transform(New Point(0, 0))
                 Dim leftCentered As Double = (Me.ActualWidth - _textBlock.ActualWidth) / 2
                 Dim diff As Double = leftCentered - p.X - _menuPlaceHolder.ActualWidth
@@ -216,150 +225,152 @@ Namespace Controls
         Protected Overrides Sub OnSourceInitialized(e As EventArgs)
             MyBase.OnSourceInitialized(e)
 
-            Me.SetChromeWindow()
+            If Me.DoShowChrome Then
+                Me.SetChromeWindow()
 
-            ' help size to content a hand
-            _originalSizeToContent = Me.SizeToContent
-            If Me.SizeToContent <> SizeToContent.Manual Then
-                _rootGrid.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
-                Dim size As Size = _rootGrid.DesiredSize
-                Me.SizeToContent = SizeToContent.Manual
-                If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Width Then
-                    Me.Width = size.Width
+                ' help size to content a hand
+                _originalSizeToContent = Me.SizeToContent
+                If Me.SizeToContent <> SizeToContent.Manual Then
+                    _rootGrid.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
+                    Dim size As Size = _rootGrid.DesiredSize
+                    Me.SizeToContent = SizeToContent.Manual
+                    If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Width Then
+                        Me.Width = size.Width
+                    End If
+                    If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Height Then
+                        Me.Height = size.Height
+                    End If
+
+                    Me.SizeToContent = _originalSizeToContent
                 End If
-                If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Height Then
-                    Me.Height = size.Height
+
+                ' window startup location
+                Dim newLeft As Double, newTop As Double, s As Forms.Screen, hWnd As IntPtr, g As System.Drawing.Graphics
+                If Me.WindowStartupLocation = WindowStartupLocation.CenterOwner AndAlso Not Me.Owner Is Nothing AndAlso Me.Owner.WindowState = WindowState.Normal Then
+                    ' center owner
+                    hWnd = New WindowInteropHelper(Me.Owner).Handle
+                    s = Forms.Screen.FromHandle(hWnd)
+
+                    newLeft = Me.Owner.Left + Me.Owner.Width / 2 - Me.Width / 2
+                    newTop = Me.Owner.Top + Me.Owner.Height / 2 - Me.Height / 2
+                ElseIf Me.WindowStartupLocation <> WindowStartupLocation.Manual Then
+                    ' center screen
+                    hWnd = New WindowInteropHelper(Me).Handle
+                    s = Forms.Screen.FromHandle(hWnd)
+                    g = System.Drawing.Graphics.FromHwnd(hWnd)
+
+                    newLeft = (s.WorkingArea.Left + s.WorkingArea.Width / 2) / (g.DpiX / 96.0) - Me.Width / 2
+                    newTop = (s.WorkingArea.Top + s.WorkingArea.Height / 2) / (g.DpiY / 96.0) - Me.Height / 2
+                Else
+                    ' manual
+                    newLeft = Me.Left
+                    newTop = Me.Top
                 End If
 
-                Me.SizeToContent = _originalSizeToContent
-            End If
+                Me.Left = newLeft
+                Me.Top = newTop
 
-            ' window startup location
-            Dim newLeft As Double, newTop As Double, s As Forms.Screen, hWnd As IntPtr, g As System.Drawing.Graphics
-            If Me.WindowStartupLocation = WindowStartupLocation.CenterOwner AndAlso Not Me.Owner Is Nothing AndAlso Me.Owner.WindowState = WindowState.Normal Then
-                ' center owner
-                hWnd = New WindowInteropHelper(Me.Owner).Handle
-                s = Forms.Screen.FromHandle(hWnd)
-
-                newLeft = Me.Owner.Left + Me.Owner.Width / 2 - Me.Width / 2
-                newTop = Me.Owner.Top + Me.Owner.Height / 2 - Me.Height / 2
-            ElseIf Me.WindowStartupLocation <> WindowStartupLocation.Manual Then
-                ' center screen
                 hWnd = New WindowInteropHelper(Me).Handle
                 s = Forms.Screen.FromHandle(hWnd)
                 g = System.Drawing.Graphics.FromHwnd(hWnd)
 
-                newLeft = (s.WorkingArea.Left + s.WorkingArea.Width / 2) / (g.DpiX / 96.0) - Me.Width / 2
-                newTop = (s.WorkingArea.Top + s.WorkingArea.Height / 2) / (g.DpiY / 96.0) - Me.Height / 2
-            Else
-                ' manual
-                newLeft = Me.Left
-                newTop = Me.Top
-            End If
+                If Me.Left < s.WorkingArea.Left / (g.DpiX / 96.0) Then
+                    Me.Left = s.WorkingArea.Left / (g.DpiX / 96.0)
+                End If
+                If Me.Top < s.WorkingArea.Top / (g.DpiX / 96.0) Then
+                    Me.Top = s.WorkingArea.Top / (g.DpiX / 96.0)
+                End If
+                If Not (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
+                    Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
+                    Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
+                End If
 
-            Me.Left = newLeft
-            Me.Top = newTop
+                Me.OnLoadPosition()
 
-            hWnd = New WindowInteropHelper(Me).Handle
-            s = Forms.Screen.FromHandle(hWnd)
-            g = System.Drawing.Graphics.FromHwnd(hWnd)
+                If _position Is Nothing Then
+                    ' don't restore position
+                    _position = New WindowPositionData()
+                Else
+                    ' determine how much percent of the titlebar is visible on all screens combined
+                    Dim visiblePercent As Double = 0
+                    For Each screen In System.Windows.Forms.Screen.AllScreens
+                        Dim dpiX As UInt32, dpiY As UInt32
+                        screen.GetDpi(dpiX, dpiY)
+                        Dim rectWindow As Rect = New Rect(
+                            _position.Left / (dpiY / 96.0),
+                            _position.Top / (dpiY / 96.0),
+                            _position.Width / (dpiY / 96.0),
+                            Me.CaptionHeight / (dpiY / 96.0))
+                        Dim rectScreen As Rect = New Rect(
+                            screen.WorkingArea.X,
+                            screen.WorkingArea.Y,
+                            screen.WorkingArea.Right - screen.WorkingArea.Left,
+                            screen.WorkingArea.Bottom - screen.WorkingArea.Top)
+                        Dim intersectRect As Rect = Rect.Intersect(rectWindow, rectScreen)
+                        If Not Math.Abs(intersectRect.Width) = Double.PositiveInfinity AndAlso Not Math.Abs(intersectRect.Height) = Double.PositiveInfinity Then
+                            visiblePercent += (intersectRect.Width * intersectRect.Height) / (rectWindow.Width * rectWindow.Height) * 100
+                        End If
+                    Next
 
-            If Me.Left < s.WorkingArea.Left / (g.DpiX / 96.0) Then
-                Me.Left = s.WorkingArea.Left / (g.DpiX / 96.0)
-            End If
-            If Me.Top < s.WorkingArea.Top / (g.DpiX / 96.0) Then
-                Me.Top = s.WorkingArea.Top / (g.DpiX / 96.0)
-            End If
-            If Not (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
-                Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
-                Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
-            End If
+                    ' if 25% or more of the titlebar is visible on all screens, restore position
+                    If visiblePercent >= 25 Then
+                        Me.Width = _position.Width
+                        Me.Height = _position.Height
+                        Me.Left = _position.Left
+                        Me.Top = _position.Top
+                    End If
 
-            Me.OnLoadPosition()
+                    ' restore state, unless it was minimized
+                    If _position.State <> WindowState.Minimized Then
+                        Me.WindowState = _position.State
+                    End If
+                End If
 
-            If _position Is Nothing Then
-                ' don't restore position
-                _position = New WindowPositionData()
-            Else
-                ' determine how much percent of the titlebar is visible on all screens combined
-                Dim visiblePercent As Double = 0
-                For Each screen In System.Windows.Forms.Screen.AllScreens
-                    Dim dpiX As UInt32, dpiY As UInt32
-                    screen.GetDpi(dpiX, dpiY)
-                    Dim rectWindow As Rect = New Rect(
-                        _position.Left / (dpiY / 96.0),
-                        _position.Top / (dpiY / 96.0),
-                        _position.Width / (dpiY / 96.0),
-                        Me.CaptionHeight / (dpiY / 96.0))
-                    Dim rectScreen As Rect = New Rect(
-                        screen.WorkingArea.X,
-                        screen.WorkingArea.Y,
-                        screen.WorkingArea.Right - screen.WorkingArea.Left,
-                        screen.WorkingArea.Bottom - screen.WorkingArea.Top)
-                    Dim intersectRect As Rect = Rect.Intersect(rectWindow, rectScreen)
-                    If Not Math.Abs(intersectRect.Width) = Double.PositiveInfinity AndAlso Not Math.Abs(intersectRect.Height) = Double.PositiveInfinity Then
-                        visiblePercent += (intersectRect.Width * intersectRect.Height) / (rectWindow.Width * rectWindow.Height) * 100
+                ' start recording position
+                _dontUpdatePosition = False
+
+                Me.CenterTitle()
+
+                ' if this window is in exact the same position as another window in our application, cascade it
+                Dim i As Integer = 1
+                Dim hasBeenTheEnd As Boolean = False
+                hWnd = New WindowInteropHelper(Me).Handle
+                s = Forms.Screen.FromHandle(hWnd)
+                g = System.Drawing.Graphics.FromHwnd(hWnd)
+                For x = 0 To System.Windows.Application.Current.Windows.Count - 1
+                    Dim window As Window = System.Windows.Application.Current.Windows(x)
+                    If Not window.Equals(Me) AndAlso window.Left = Me.Left AndAlso window.Top = Me.Top AndAlso window.Width = Me.Width AndAlso window.Height = Me.Height Then
+                        Me.Left += 30
+                        Me.Top += 30
+                        x = 0
+
+                        If Me.Top + Me.Height > s.WorkingArea.Bottom / (g.DpiY / 96.0) Then
+                            Me.Left = i * 30
+                            Me.Top = 30
+                            i += 1
+                        End If
+                        If Me.Left + Me.Width > s.WorkingArea.Right / (g.DpiY / 96.0) Then
+                            If Not hasBeenTheEnd Then
+                                i = 1
+                                Me.Left = i * 30
+                                Me.Top = 30
+                                hasBeenTheEnd = True
+                            Else
+                                ' give up
+                                Exit For
+                            End If
+                        End If
                     End If
                 Next
 
-                ' if 25% or more of the titlebar is visible on all screens, restore position
-                If visiblePercent >= 25 Then
-                    Me.Width = _position.Width
-                    Me.Height = _position.Height
-                    Me.Left = _position.Left
-                    Me.Top = _position.Top
-                End If
-
-                ' restore state, unless it was minimized
-                If _position.State <> WindowState.Minimized Then
-                    Me.WindowState = _position.State
-                End If
+                ' save pos in case this is the first time
+                _position.State = Me.WindowState
+                _position.Left = Me.Left
+                _position.Top = Me.Top
+                _position.Width = Me.Width
+                _position.Height = Me.Height
+                _previousPosition = _position.Clone()
             End If
-
-            ' start recording position
-            _dontUpdatePosition = False
-
-            Me.CenterTitle()
-
-            ' if this window is in exact the same position as another window in our application, cascade it
-            Dim i As Integer = 1
-            Dim hasBeenTheEnd As Boolean = False
-            hWnd = New WindowInteropHelper(Me).Handle
-            s = Forms.Screen.FromHandle(hWnd)
-            g = System.Drawing.Graphics.FromHwnd(hWnd)
-            For x = 0 To System.Windows.Application.Current.Windows.Count - 1
-                Dim window As Window = System.Windows.Application.Current.Windows(x)
-                If Not window.Equals(Me) AndAlso window.Left = Me.Left AndAlso window.Top = Me.Top AndAlso window.Width = Me.Width AndAlso window.Height = Me.Height Then
-                    Me.Left += 30
-                    Me.Top += 30
-                    x = 0
-
-                    If Me.Top + Me.Height > s.WorkingArea.Bottom / (g.DpiY / 96.0) Then
-                        Me.Left = i * 30
-                        Me.Top = 30
-                        i += 1
-                    End If
-                    If Me.Left + Me.Width > s.WorkingArea.Right / (g.DpiY / 96.0) Then
-                        If Not hasBeenTheEnd Then
-                            i = 1
-                            Me.Left = i * 30
-                            Me.Top = 30
-                            hasBeenTheEnd = True
-                        Else
-                            ' give up
-                            Exit For
-                        End If
-                    End If
-                End If
-            Next
-
-            ' save pos in case this is the first time
-            _position.State = Me.WindowState
-            _position.Left = Me.Left
-            _position.Top = Me.Top
-            _position.Width = Me.Width
-            _position.Height = Me.Height
-            _previousPosition = _position.Clone()
         End Sub
 
         Protected Sub SetChromeWindow()
@@ -392,63 +403,67 @@ Namespace Controls
             _maximizeRestoreButton = Me.Template.FindName("PART_MaximizeRestoreButton", Me)
             _closeButton = Me.Template.FindName("PART_CloseButton", Me)
 
-            If Not _textBlock Is Nothing Then
-                AddHandler _textBlock.SizeChanged,
+            If Me.DoShowChrome Then
+                If Not _textBlock Is Nothing Then
+                    AddHandler _textBlock.SizeChanged,
                     Sub()
                         Me.CenterTitle()
                     End Sub
+                End If
+
+                If Not _titleBar Is Nothing Then
+                    _titleBar.Focus()
+                    Keyboard.ClearFocus()
+                    _titleBar.Focusable = False
+                End If
+
+                If Not _iconButton Is Nothing Then
+                    AddHandler _iconButton.Click,
+                        Sub()
+                            Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
+                            Dim s As System.Windows.Forms.Screen = Forms.Screen.FromHandle(hWnd)
+                            Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
+                            Dim p As Point = _iconButton.PointToScreen(New Point(0, _iconButton.ActualHeight))
+                            p.X = p.X / (g.DpiX / 96.0)
+                            p.Y = p.Y / (g.DpiY / 96.0)
+                            Me.ShowSystemMenu(p)
+                        End Sub
+                    AddHandler _iconButton.MouseUp, AddressOf onShowSystemMenu
+                    AddHandler _iconButton.MouseDoubleClick,
+                        Sub()
+                            Me.Close()
+                        End Sub
+                End If
+                If Not _minimizeButton Is Nothing Then
+                    AddHandler _minimizeButton.Click,
+                        Sub()
+                            Me.Minimize()
+                        End Sub
+                    AddHandler _minimizeButton.MouseUp, AddressOf onShowSystemMenu
+                End If
+                If Not _maximizeRestoreButton Is Nothing Then
+                    AddHandler _maximizeRestoreButton.Click,
+                        Sub()
+                            If Me.WindowState = WindowState.Maximized Then
+                                Me.Restore()
+                                _maximizeRestoreButton.Content = "1"
+                            Else
+                                Me.Maximize()
+                                _maximizeRestoreButton.Content = "2"
+                            End If
+                        End Sub
+                    AddHandler _maximizeRestoreButton.MouseUp, AddressOf onShowSystemMenu
+                End If
+                If Not _closeButton Is Nothing Then
+                    AddHandler _closeButton.Click,
+                         Sub()
+                             Me.Close()
+                         End Sub
+                    AddHandler _closeButton.MouseUp, AddressOf onShowSystemMenu
+                End If
             End If
 
-            If Not _titleBar Is Nothing Then
-                _titleBar.Focus()
-                Keyboard.ClearFocus()
-                _titleBar.Focusable = False
-            End If
-
-            If Not _iconButton Is Nothing Then
-                AddHandler _iconButton.Click,
-                    Sub()
-                        Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
-                        Dim s As System.Windows.Forms.Screen = Forms.Screen.FromHandle(hWnd)
-                        Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
-                        Dim p As Point = _iconButton.PointToScreen(New Point(0, _iconButton.ActualHeight))
-                        p.X = p.X / (g.DpiX / 96.0)
-                        p.Y = p.Y / (g.DpiY / 96.0)
-                        Me.ShowSystemMenu(p)
-                    End Sub
-                AddHandler _iconButton.MouseUp, AddressOf onShowSystemMenu
-                AddHandler _iconButton.MouseDoubleClick,
-                    Sub()
-                        Me.Close()
-                    End Sub
-            End If
-            If Not _minimizeButton Is Nothing Then
-                AddHandler _minimizeButton.Click,
-                    Sub()
-                        Me.Minimize()
-                    End Sub
-                AddHandler _minimizeButton.MouseUp, AddressOf onShowSystemMenu
-            End If
-            If Not _maximizeRestoreButton Is Nothing Then
-                AddHandler _maximizeRestoreButton.Click,
-                    Sub()
-                        If Me.WindowState = WindowState.Maximized Then
-                            Me.Restore()
-                            _maximizeRestoreButton.Content = "1"
-                        Else
-                            Me.Maximize()
-                            _maximizeRestoreButton.Content = "2"
-                        End If
-                    End Sub
-                AddHandler _maximizeRestoreButton.MouseUp, AddressOf onShowSystemMenu
-            End If
-            If Not _closeButton Is Nothing Then
-                AddHandler _closeButton.Click,
-                     Sub()
-                         Me.Close()
-                     End Sub
-                AddHandler _closeButton.MouseUp, AddressOf onShowSystemMenu
-            End If
+            setMargin()
         End Sub
 
         Private Sub onShowSystemMenu(sender As Object, e As MouseButtonEventArgs)
@@ -463,7 +478,7 @@ Namespace Controls
         Protected Overrides Sub OnLocationChanged(e As EventArgs)
             MyBase.OnLocationChanged(e)
 
-            If Me.WindowState = WindowState.Normal AndAlso Not _dontUpdatePosition Then
+            If Me.WindowState = WindowState.Normal AndAlso Not _dontUpdatePosition AndAlso Me.DoShowChrome Then
                 _previousPosition = _position.Clone()
                 _position.Left = Me.Left
                 _position.Top = Me.Top
@@ -471,17 +486,23 @@ Namespace Controls
         End Sub
 
         Protected Overrides Sub OnStateChanged(e As EventArgs)
-            SetChromeWindow()
+            If Me.DoShowChrome Then
+                SetChromeWindow()
 
-            ' szve state
-            If Not _dontUpdatePosition Then
-                If Me.WindowState <> WindowState.Normal Then
-                    _position = _previousPosition.Clone()
+                ' save state
+                If Not _dontUpdatePosition Then
+                    If Me.WindowState <> WindowState.Normal Then
+                        _position = _previousPosition.Clone()
+                    End If
+                    _position.State = Me.WindowState
+                    _noPositionCorrection = True
                 End If
-                _position.State = Me.WindowState
-                _noPositionCorrection = True
-            End If
 
+                setMargin()
+            End If
+        End Sub
+
+        Private Sub setMargin()
             If Me.WindowState = WindowState.Maximized Then
                 ' set maximized margins to not get under the taskbar
                 Dim margin As Thickness = New Thickness()
@@ -491,7 +512,7 @@ Namespace Controls
                     margin = New Thickness(4)
                 End If
 
-                If Me.WindowStyle = WindowStyle.None Then
+                If Me.WindowStyle = WindowStyle.None AndAlso Me.DoShowChrome Then
                     Dim currentScreen As System.Windows.Forms.Screen = System.Windows.Forms.Screen.FromHandle(New WindowInteropHelper(Me).Handle)
                     Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwndInternal(New WindowInteropHelper(Me).Handle)
                     margin = New Thickness(

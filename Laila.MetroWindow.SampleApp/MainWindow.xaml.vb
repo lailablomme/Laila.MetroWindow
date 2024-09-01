@@ -54,4 +54,8 @@ Class MainWindow
         aw.Owner = Me
         aw.Show()
     End Sub
+
+    Private Sub CloseWindow_Click(sender As Object, e As RoutedEventArgs) Handles CloseWindow.Click
+        Me.Close()
+    End Sub
 End Class
