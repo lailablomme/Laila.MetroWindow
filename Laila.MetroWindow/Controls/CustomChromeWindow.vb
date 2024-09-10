@@ -1,14 +1,10 @@
 Imports System.ComponentModel
-Imports System.Reflection.Metadata
-Imports System.Threading
 Imports System.Windows
 Imports System.Windows.Controls
-Imports System.Windows.Forms
 Imports System.Windows.Interop
 Imports System.Windows.Media
 Imports System.Windows.Media.Animation
 Imports System.Windows.Media.Imaging
-Imports System.Windows.Shell
 
 Namespace Controls
     Public Class CustomChromeWindow
@@ -20,65 +16,58 @@ Namespace Controls
         Private Const SC_RESTORE As Integer = &HF120
 
         Private _originalTopMost As Boolean
-        Private _w As Window
         Private _minimizeImage As RenderTargetBitmap
         Private _skip As Boolean
         Private _s As System.Windows.Forms.Screen
         Private _g As System.Drawing.Graphics
+        Private _isMinimized As Boolean = False
 
-        Private Async Sub doRestoreAnimPt1()
-            _w = New Window() With {
-                .WindowStyle = WindowStyle.None,
-                .AllowsTransparency = True,
-                .Background = Brushes.Transparent,
-                .Left = _s.WorkingArea.Left / (_g.DpiX / 96.0),
-                .Top = _s.WorkingArea.Top / (_g.DpiY / 96.0),
-                .Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_g.DpiX / 96.0),
-                .Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_g.DpiY / 96.0),
-                .ShowInTaskbar = False,
-                .Topmost = True
-            }
-            _w.Margin = New Thickness(
-                    (_s.WorkingArea.Left - _s.Bounds.Left) / (_g.DpiY / 96.0),
-                    (_s.WorkingArea.Top - _s.Bounds.Top) / (_g.DpiY / 96.0),
-                    (_s.Bounds.Right - _s.WorkingArea.Right) / (_g.DpiY / 96.0),
-                    (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_g.DpiY / 96.0))
-            _w.Content = New Image() With {
+        Private Async Sub doRestoreAnimPt1(w As Window)
+            w.Left = _s.WorkingArea.Left / (_g.DpiX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_g.DpiY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_g.DpiX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_g.DpiY / 96.0)
+            w.Margin = New Thickness(
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_g.DpiY / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_g.DpiY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_g.DpiY / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_g.DpiY / 96.0))
+            w.Content = New Image() With {
                 .Source = _minimizeImage,
                 .Width = Me.ActualWidth,
                 .Height = Me.ActualHeight,
-                .Margin = New Thickness(_w.Width / 2 - 100, _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0),
+                .Margin = New Thickness(w.Width / 2 - 100, _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left
             }
 
-            _w.Show()
+            w.Show()
 
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
             Dim ta As ThicknessAnimation =
                     New ThicknessAnimation(
-                        CType(_w.Content, Image).Margin,
-                        New Thickness(Me.Left - _s.WorkingArea.Left / (_g.DpiX / 96.0), Me.Top - _w.Margin.Top - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+                        CType(w.Content, Image).Margin,
+                        New Thickness(Me.Left - _s.WorkingArea.Left / (_g.DpiX / 96.0), Me.Top - w.Margin.Top - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da As DoubleAnimation = New DoubleAnimation(200, Me.Width, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da2 As DoubleAnimation = New DoubleAnimation(0, 1, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             ta.EasingFunction = ease
 
-            CType(_w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
-            CType(_w.Content, Image).BeginAnimation(Image.WidthProperty, da)
-            CType(_w.Content, Image).BeginAnimation(Image.OpacityProperty, da2)
+            CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
+            CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da)
+            CType(w.Content, Image).BeginAnimation(Image.OpacityProperty, da2)
 
             Await Task.Delay(MINIMIZE_SPEED)
             _skip = False
             SystemCommands.RestoreWindow(Me)
 
             Await Task.Delay(100)
-            _w.Close()
 
+            w.Close()
             _g.Dispose()
         End Sub
 
-        Private Sub doMinimizeAnimPt1()
+        Private Sub doMinimizeAnimPt1(w As Window)
             _minimizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, 96, 96, PixelFormats.Pbgra32)
             _minimizeImage.Render(Me)
 
@@ -86,51 +75,45 @@ Namespace Controls
             _s = Forms.Screen.FromHandle(hWnd)
             _g = System.Drawing.Graphics.FromHwndInternal(hWnd)
 
-            _w = New Window() With {
-                .WindowStyle = WindowStyle.None,
-                .AllowsTransparency = True,
-                .Background = Brushes.Transparent,
-                .Left = _s.WorkingArea.Left / (_g.DpiX / 96.0),
-                .Top = _s.WorkingArea.Top / (_g.DpiY / 96.0),
-                .Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_g.DpiX / 96.0),
-                .Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_g.DpiY / 96.0),
-                .ShowInTaskbar = False
-            }
-            _w.Margin = New Thickness(
-                    (_s.WorkingArea.Left - _s.Bounds.Left) / (_g.DpiY / 96.0),
-                    (_s.WorkingArea.Top - _s.Bounds.Top) / (_g.DpiY / 96.0),
-                    (_s.Bounds.Right - _s.WorkingArea.Right) / (_g.DpiY / 96.0),
-                    (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_g.DpiY / 96.0))
-            _w.Content = New Image() With {
+            w.Left = _s.WorkingArea.Left / (_g.DpiX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_g.DpiY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_g.DpiX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_g.DpiY / 96.0)
+            w.Margin = New Thickness(
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_g.DpiY / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_g.DpiY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_g.DpiY / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_g.DpiY / 96.0))
+            w.Content = New Image() With {
                 .Source = _minimizeImage,
                 .Width = Me.ActualWidth,
                 .Height = Me.ActualHeight,
-                .Margin = New Thickness(Me.Left - _s.WorkingArea.Left / (_g.DpiX / 96.0), Me.Top - _w.Margin.Top - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0),
+                .Margin = New Thickness(Me.Left - _s.WorkingArea.Left / (_g.DpiX / 96.0), Me.Top - w.Margin.Top - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left
             }
 
-            _w.Show()
+            w.Show()
         End Sub
 
-        Private Async Sub doMinimizeAnimPt2()
+        Private Async Sub doMinimizeAnimPt2(w As Window)
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
             Dim ta As ThicknessAnimation =
                     New ThicknessAnimation(
-                        CType(_w.Content, Image).Margin,
-                        New Thickness(_w.Width / 2 - 100, _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+                        CType(w.Content, Image).Margin,
+                        New Thickness(w.Width / 2 - 100, _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da As DoubleAnimation = New DoubleAnimation(Me.ActualWidth, 200, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da2 As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             ta.EasingFunction = ease
 
-            CType(_w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
-            CType(_w.Content, Image).BeginAnimation(Image.WidthProperty, da)
-            CType(_w.Content, Image).BeginAnimation(Image.OpacityProperty, da2)
+            CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
+            CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da)
+            CType(w.Content, Image).BeginAnimation(Image.OpacityProperty, da2)
 
             Await Task.Delay(MINIMIZE_SPEED)
 
-            _w.Close()
+            w.Close()
         End Sub
 
         Protected Overrides Sub OnSourceInitialized(e As EventArgs)
@@ -141,21 +124,43 @@ Namespace Controls
             source.AddHook(AddressOf HwndHook)
         End Sub
 
+        Private Function makeWindow() As Window
+            Return New Window() With {
+                .WindowStyle = WindowStyle.None,
+                .AllowsTransparency = True,
+                .Background = Brushes.Transparent,
+                .ShowInTaskbar = False,
+                .Topmost = True
+            }
+        End Function
+
         Private Function HwndHook(hwnd As IntPtr, msg As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
             Select Case msg
                 Case WM_SYSCOMMAND
                     Select Case wParam
                         Case SC_MINIMIZE
-                            doMinimizeAnimPt1()
-                            Windows.Application.Current.Dispatcher.BeginInvoke(
-                                Sub()
-                                    doMinimizeAnimPt2()
-                                End Sub)
-                            _skip = True
+                            If Not _isMinimized Then
+                                _isMinimized = True
+
+                                Dim w As Window = makeWindow()
+
+                                _skip = True
+                                doMinimizeAnimPt1(w)
+                                Windows.Application.Current.Dispatcher.BeginInvoke(
+                                    Sub()
+                                        doMinimizeAnimPt2(w)
+                                    End Sub)
+                            End If
                         Case SC_RESTORE
-                            If _skip Then
-                                handled = True
-                                doRestoreAnimPt1()
+                            If _isMinimized Then
+                                _isMinimized = False
+
+                                Dim w As Window = makeWindow()
+
+                                If _skip Then
+                                    handled = True
+                                    doRestoreAnimPt1(w)
+                                End If
                             End If
                     End Select
             End Select
