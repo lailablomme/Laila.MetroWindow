@@ -19,25 +19,26 @@ Namespace Controls
         Private _minimizeImage As RenderTargetBitmap
         Private _skip As Boolean
         Private _s As System.Windows.Forms.Screen
-        Private _g As System.Drawing.Graphics
+        Private _dpi As DpiScale
         Private _isMinimized As Boolean = False
         Private _wasMaximized As Boolean = False
+        Private _windowGuid As String = "9bf6faf8-7fdc-4525-93e5-9cd8f97209a4"
 
         Private Async Sub doRestoreAnimPt1(w As Window, wasMaximized As Boolean)
-            w.Left = _s.WorkingArea.Left / (_g.DpiX / 96.0)
-            w.Top = _s.WorkingArea.Top / (_g.DpiY / 96.0)
-            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_g.DpiX / 96.0)
-            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_g.DpiY / 96.0)
+            w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
             w.Margin = New Thickness(
-                (_s.WorkingArea.Left - _s.Bounds.Left) / (_g.DpiY / 96.0),
-                (_s.WorkingArea.Top - _s.Bounds.Top) / (_g.DpiY / 96.0),
-                (_s.Bounds.Right - _s.WorkingArea.Right) / (_g.DpiY / 96.0),
-                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_g.DpiY / 96.0))
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
             w.Content = New Image() With {
                 .Source = _minimizeImage,
                 .Width = 200,
                 .Height = Me.ActualHeight,
-                .Margin = New Thickness(If(Me.ShowInTaskbar, w.Width / 2 - 100, 0), _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0),
+                .Margin = New Thickness(If(Me.ShowInTaskbar, w.Width / 2 - 100, 0), _s.WorkingArea.Bottom / (_dpi.PixelsPerInchY / 96.0), 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left
             }
@@ -49,7 +50,9 @@ Namespace Controls
             Dim ta As ThicknessAnimation =
                     New ThicknessAnimation(
                         CType(w.Content, Image).Margin,
-                        New Thickness(If(wasMaximized, w.Left, Me.Left) - _s.WorkingArea.Left / (_g.DpiX / 96.0), If(wasMaximized, w.Top, Me.Top) - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+                        New Thickness(If(wasMaximized, w.Left, Me.Left) - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0),
+                                      If(wasMaximized, w.Top, Me.Top) - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0), 0, 0),
+                        New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da As DoubleAnimation = New DoubleAnimation(200, If(wasMaximized, w.ActualWidth, Me.Width), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da2 As DoubleAnimation = New DoubleAnimation(0, 1, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             ta.EasingFunction = ease
@@ -65,7 +68,6 @@ Namespace Controls
             Await Task.Delay(100)
 
             w.Close()
-            _g.Dispose()
         End Sub
 
         Private Sub doMinimizeAnimPt1(w As Window, isMaximized As Boolean)
@@ -74,22 +76,23 @@ Namespace Controls
 
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
             _s = Forms.Screen.FromHandle(hWnd)
-            _g = System.Drawing.Graphics.FromHwndInternal(hWnd)
+            _dpi = VisualTreeHelper.GetDpi(Me)
 
-            w.Left = _s.WorkingArea.Left / (_g.DpiX / 96.0)
-            w.Top = _s.WorkingArea.Top / (_g.DpiY / 96.0)
-            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_g.DpiX / 96.0)
-            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_g.DpiY / 96.0)
+            w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
             w.Margin = New Thickness(
-                (_s.WorkingArea.Left - _s.Bounds.Left) / (_g.DpiY / 96.0),
-                (_s.WorkingArea.Top - _s.Bounds.Top) / (_g.DpiY / 96.0),
-                (_s.Bounds.Right - _s.WorkingArea.Right) / (_g.DpiY / 96.0),
-                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_g.DpiY / 96.0))
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
             w.Content = New Image() With {
                 .Source = _minimizeImage,
                 .Width = Me.ActualWidth,
                 .Height = Me.ActualHeight,
-                .Margin = New Thickness(If(isMaximized, w.Left, Me.Left) - _s.WorkingArea.Left / (_g.DpiX / 96.0), If(isMaximized, w.Top, Me.Top) - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0),
+                .Margin = New Thickness(If(isMaximized, w.Left, Me.Left) - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0),
+                                        If(isMaximized, w.Top, Me.Top) - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0), 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left
             }
@@ -103,7 +106,8 @@ Namespace Controls
             Dim ta As ThicknessAnimation =
                     New ThicknessAnimation(
                         CType(w.Content, Image).Margin,
-                        New Thickness(If(Me.ShowInTaskbar, w.Width / 2 - 100, 0), _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+                        New Thickness(If(Me.ShowInTaskbar, w.Width / 2 - 100, 0), _s.WorkingArea.Bottom / (_dpi.PixelsPerInchY / 96.0), 0, 0),
+                        New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da As DoubleAnimation = New DoubleAnimation(Me.ActualWidth, 200, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da2 As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             ta.EasingFunction = ease
@@ -131,7 +135,8 @@ Namespace Controls
                 .AllowsTransparency = True,
                 .Background = Brushes.Transparent,
                 .ShowInTaskbar = False,
-                .Topmost = True
+                .Topmost = True,
+                .Tag = _windowGuid
             }
         End Function
 
@@ -219,6 +224,12 @@ Namespace Controls
                 End If
                 deepOwner.Activate()
             End If
+
+            For Each w As Window In Application.Current.Windows
+                If _windowGuid.Equals(w.Tag) Then
+                    w.Close()
+                End If
+            Next
         End Sub
     End Class
 End Namespace
