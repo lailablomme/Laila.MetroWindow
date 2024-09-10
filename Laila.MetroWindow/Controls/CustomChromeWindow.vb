@@ -21,8 +21,9 @@ Namespace Controls
         Private _s As System.Windows.Forms.Screen
         Private _g As System.Drawing.Graphics
         Private _isMinimized As Boolean = False
+        Private _wasMaximized As Boolean = False
 
-        Private Async Sub doRestoreAnimPt1(w As Window)
+        Private Async Sub doRestoreAnimPt1(w As Window, wasMaximized As Boolean)
             w.Left = _s.WorkingArea.Left / (_g.DpiX / 96.0)
             w.Top = _s.WorkingArea.Top / (_g.DpiY / 96.0)
             w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_g.DpiX / 96.0)
@@ -34,9 +35,9 @@ Namespace Controls
                 (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_g.DpiY / 96.0))
             w.Content = New Image() With {
                 .Source = _minimizeImage,
-                .Width = Me.ActualWidth,
+                .Width = 200,
                 .Height = Me.ActualHeight,
-                .Margin = New Thickness(w.Width / 2 - 100, _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0),
+                .Margin = New Thickness(If(Me.ShowInTaskbar, w.Width / 2 - 100, 0), _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left
             }
@@ -48,8 +49,8 @@ Namespace Controls
             Dim ta As ThicknessAnimation =
                     New ThicknessAnimation(
                         CType(w.Content, Image).Margin,
-                        New Thickness(Me.Left - _s.WorkingArea.Left / (_g.DpiX / 96.0), Me.Top - w.Margin.Top - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
-            Dim da As DoubleAnimation = New DoubleAnimation(200, Me.Width, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+                        New Thickness(If(wasMaximized, w.Left, Me.Left) - _s.WorkingArea.Left / (_g.DpiX / 96.0), If(wasMaximized, w.Top, Me.Top) - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+            Dim da As DoubleAnimation = New DoubleAnimation(200, If(wasMaximized, w.ActualWidth, Me.Width), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da2 As DoubleAnimation = New DoubleAnimation(0, 1, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             ta.EasingFunction = ease
 
@@ -67,7 +68,7 @@ Namespace Controls
             _g.Dispose()
         End Sub
 
-        Private Sub doMinimizeAnimPt1(w As Window)
+        Private Sub doMinimizeAnimPt1(w As Window, isMaximized As Boolean)
             _minimizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, 96, 96, PixelFormats.Pbgra32)
             _minimizeImage.Render(Me)
 
@@ -88,7 +89,7 @@ Namespace Controls
                 .Source = _minimizeImage,
                 .Width = Me.ActualWidth,
                 .Height = Me.ActualHeight,
-                .Margin = New Thickness(Me.Left - _s.WorkingArea.Left / (_g.DpiX / 96.0), Me.Top - w.Margin.Top - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0),
+                .Margin = New Thickness(If(isMaximized, w.Left, Me.Left) - _s.WorkingArea.Left / (_g.DpiX / 96.0), If(isMaximized, w.Top, Me.Top) - _s.WorkingArea.Top / (_g.DpiY / 96.0), 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left
             }
@@ -102,7 +103,7 @@ Namespace Controls
             Dim ta As ThicknessAnimation =
                     New ThicknessAnimation(
                         CType(w.Content, Image).Margin,
-                        New Thickness(w.Width / 2 - 100, _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+                        New Thickness(If(Me.ShowInTaskbar, w.Width / 2 - 100, 0), _s.WorkingArea.Bottom / (_g.DpiY / 96.0), 0, 0), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da As DoubleAnimation = New DoubleAnimation(Me.ActualWidth, 200, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da2 As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             ta.EasingFunction = ease
@@ -141,11 +142,12 @@ Namespace Controls
                         Case SC_MINIMIZE
                             If Not _isMinimized Then
                                 _isMinimized = True
+                                _skip = True
+                                _wasMaximized = Me.WindowState = WindowState.Maximized
 
                                 Dim w As Window = makeWindow()
 
-                                _skip = True
-                                doMinimizeAnimPt1(w)
+                                doMinimizeAnimPt1(w, _wasMaximized)
                                 Windows.Application.Current.Dispatcher.BeginInvoke(
                                     Sub()
                                         doMinimizeAnimPt2(w)
@@ -159,7 +161,7 @@ Namespace Controls
 
                                 If _skip Then
                                     handled = True
-                                    doRestoreAnimPt1(w)
+                                    doRestoreAnimPt1(w, _wasMaximized)
                                 End If
                             End If
                     End Select
