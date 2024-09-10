@@ -189,21 +189,26 @@ Namespace Controls
                 While Not deepOwner.Owner Is Nothing
                     deepOwner = deepOwner.Owner
                 End While
-                _originalTopMost = deepOwner.Topmost
-                deepOwner.Topmost = True
+                If Not Me.Equals(deepOwner) Then
+                    _originalTopMost = deepOwner.Topmost
+                    deepOwner.Topmost = True
+                End If
             End If
         End Sub
 
         Protected Overrides Async Sub OnClosed(e As EventArgs)
             MyBase.OnClosed(e)
 
-            Await Task.Delay(250)
+            Await Task.Delay(150)
             Dim deepOwner As Window = Me
             While Not deepOwner.Owner Is Nothing
                 deepOwner = deepOwner.Owner
             End While
-            If _originalTopMost = False Then
-                deepOwner.Topmost = False
+            If Not Me.Equals(deepOwner) Then
+                If _originalTopMost = False Then
+                    deepOwner.Topmost = False
+                End If
+                deepOwner.Activate()
             End If
         End Sub
     End Class
