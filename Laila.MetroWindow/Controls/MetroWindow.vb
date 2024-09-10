@@ -143,16 +143,17 @@ Namespace Controls
                             Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
                             Dim s As Forms.Screen = Forms.Screen.FromHandle(hWnd)
                             System.Windows.Application.Current.Dispatcher.BeginInvoke(
-                            Sub()
-                                Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
-                                Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
-                                If Me.Top + Me.Height > s.WorkingArea.Bottom / (g.DpiY / 96.0) Then
-                                    Me.Top = s.WorkingArea.Bottom / (g.DpiY / 96.0) - Me.Height
-                                End If
-                                If Me.Left + Me.Width > s.WorkingArea.Right / (g.DpiY / 96.0) Then
-                                    Me.Left = s.WorkingArea.Right / (g.DpiY / 96.0) - Me.Width
-                                End If
-                            End Sub)
+                                Sub()
+                                    Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
+                                    Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
+                                    If Me.Top + Me.Height > s.WorkingArea.Bottom / (g.DpiY / 96.0) Then
+                                        Me.Top = s.WorkingArea.Bottom / (g.DpiY / 96.0) - Me.Height
+                                    End If
+                                    If Me.Left + Me.Width > s.WorkingArea.Right / (g.DpiY / 96.0) Then
+                                        Me.Left = s.WorkingArea.Right / (g.DpiY / 96.0) - Me.Width
+                                    End If
+                                    g.Dispose()
+                                End Sub)
                         End If
                         _noPositionCorrection = False
 
@@ -261,6 +262,8 @@ Namespace Controls
 
                     newLeft = (s.WorkingArea.Left + s.WorkingArea.Width / 2) / (g.DpiX / 96.0) - Me.Width / 2
                     newTop = (s.WorkingArea.Top + s.WorkingArea.Height / 2) / (g.DpiY / 96.0) - Me.Height / 2
+
+                    g.Dispose()
                 Else
                     ' manual
                     newLeft = Me.Left
@@ -334,9 +337,6 @@ Namespace Controls
                 ' if this window is in exact the same position as another window in our application, cascade it
                 Dim i As Integer = 1
                 Dim hasBeenTheEnd As Boolean = False
-                hWnd = New WindowInteropHelper(Me).Handle
-                s = Forms.Screen.FromHandle(hWnd)
-                g = System.Drawing.Graphics.FromHwnd(hWnd)
                 For x = 0 To System.Windows.Application.Current.Windows.Count - 1
                     Dim window As Window = System.Windows.Application.Current.Windows(x)
                     If Not window.Equals(Me) AndAlso window.Left = Me.Left AndAlso window.Top = Me.Top AndAlso window.Width = Me.Width AndAlso window.Height = Me.Height Then
@@ -370,6 +370,8 @@ Namespace Controls
                 _position.Width = Me.Width
                 _position.Height = Me.Height
                 _previousPosition = _position.Clone()
+
+                g.Dispose()
             End If
         End Sub
 
@@ -427,6 +429,7 @@ Namespace Controls
                             p.X = p.X / (g.DpiX / 96.0)
                             p.Y = p.Y / (g.DpiY / 96.0)
                             Me.ShowSystemMenu(p)
+                            g.Dispose()
                         End Sub
                     AddHandler _iconButton.MouseUp, AddressOf onShowSystemMenu
                     AddHandler _iconButton.MouseDoubleClick,
@@ -516,10 +519,11 @@ Namespace Controls
                     Dim currentScreen As System.Windows.Forms.Screen = System.Windows.Forms.Screen.FromHandle(New WindowInteropHelper(Me).Handle)
                     Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwndInternal(New WindowInteropHelper(Me).Handle)
                     margin = New Thickness(
-                     (currentScreen.WorkingArea.Left - currentScreen.Bounds.Left) / (g.DpiY / 96.0) + margin.Left,
-                     (currentScreen.WorkingArea.Top - currentScreen.Bounds.Top) / (g.DpiY / 96.0) + margin.Top,
-                     (currentScreen.Bounds.Right - currentScreen.WorkingArea.Right) / (g.DpiY / 96.0) + margin.Right,
-                     (currentScreen.Bounds.Bottom - currentScreen.WorkingArea.Bottom) / (g.DpiY / 96.0) + margin.Bottom)
+                        (currentScreen.WorkingArea.Left - currentScreen.Bounds.Left) / (g.DpiY / 96.0) + margin.Left,
+                        (currentScreen.WorkingArea.Top - currentScreen.Bounds.Top) / (g.DpiY / 96.0) + margin.Top,
+                        (currentScreen.Bounds.Right - currentScreen.WorkingArea.Right) / (g.DpiY / 96.0) + margin.Right,
+                        (currentScreen.Bounds.Bottom - currentScreen.WorkingArea.Bottom) / (g.DpiY / 96.0) + margin.Bottom)
+                    g.Dispose()
                 End If
 
                 If Not _rootGrid Is Nothing Then
