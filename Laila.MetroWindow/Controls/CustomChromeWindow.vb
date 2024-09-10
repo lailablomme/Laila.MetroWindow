@@ -74,6 +74,8 @@ Namespace Controls
 
             Await Task.Delay(100)
             _w.Close()
+
+            _g.Dispose()
         End Sub
 
         Private Sub doMinimizeAnimPt1()
