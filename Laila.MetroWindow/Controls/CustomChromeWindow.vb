@@ -56,6 +56,8 @@ Namespace Controls
             Dim da As DoubleAnimation = New DoubleAnimation(200, If(wasMaximized, w.ActualWidth, Me.Width), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da2 As DoubleAnimation = New DoubleAnimation(0, 1, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             ta.EasingFunction = ease
+            da.EasingFunction = ease
+            da2.EasingFunction = ease
 
             CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
             CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da)
@@ -111,6 +113,8 @@ Namespace Controls
             Dim da As DoubleAnimation = New DoubleAnimation(Me.ActualWidth, 200, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             Dim da2 As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
             ta.EasingFunction = ease
+            da.EasingFunction = ease
+            da2.EasingFunction = ease
 
             CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
             CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da)
