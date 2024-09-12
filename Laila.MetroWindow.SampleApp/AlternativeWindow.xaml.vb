@@ -33,4 +33,10 @@ Public Class AlternativeWindow
         }
     End Sub
 
+    Private Sub ShowAlternativeWindowButton_Click(sender As Object, e As RoutedEventArgs) Handles ShowAlternativeWindowButton.Click
+        Dim aw As AlternativeWindow = New AlternativeWindow()
+        aw.Owner = Me
+        aw.ShowInTaskbar = False
+        aw.Show()
+    End Sub
 End Class

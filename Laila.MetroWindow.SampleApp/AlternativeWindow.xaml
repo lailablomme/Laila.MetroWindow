@@ -40,6 +40,7 @@
         <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock Foreground="#41B1E1" FontSize="55" FontFamily="Segoe UI Light" TextAlignment="Center">Laïla</TextBlock>
             <TextBox Width="100" x:Name="textBox" />
+            <Button x:Name="ShowAlternativeWindowButton" Margin="0,20,0,0">Show alternative window</Button>
         </StackPanel>
     </Grid>
 </mw:MetroWindow>

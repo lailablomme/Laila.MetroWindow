@@ -15,7 +15,6 @@ Namespace Controls
         Private Const SC_MINIMIZE As Integer = &HF020
         Private Const SC_RESTORE As Integer = &HF120
 
-        Private _originalTopMost As Boolean
         Private _minimizeImage As RenderTargetBitmap
         Private _skip As Boolean
         Private _s As System.Windows.Forms.Screen
@@ -202,31 +201,21 @@ Namespace Controls
         Protected Overrides Sub OnClosing(e As CancelEventArgs)
             MyBase.OnClosing(e)
 
+            ' avoid main window disappearing after close
             If Not e.Cancel AndAlso Not Me.Owner Is Nothing Then
                 Dim deepOwner As Window = Me
                 While Not deepOwner.Owner Is Nothing
                     deepOwner = deepOwner.Owner
                 End While
                 If Not Me.Equals(deepOwner) Then
-                    _originalTopMost = deepOwner.Topmost
-                    deepOwner.Topmost = True
+                    deepOwner.Activate()
                 End If
             End If
         End Sub
 
-        Protected Overrides Async Sub OnClosed(e As EventArgs)
+        Protected Overrides Sub OnClosed(e As EventArgs)
             MyBase.OnClosed(e)
 
-            Await Task.Delay(150)
-            Dim deepOwner As Window = Me
-            While Not deepOwner.Owner Is Nothing
-                deepOwner = deepOwner.Owner
-            End While
-            If Not Me.Equals(deepOwner) Then
-                If _originalTopMost = False Then
-                    deepOwner.Topmost = False
-                End If
-            End If
             If Not Me.Owner Is Nothing Then
                 Me.Owner.Activate()
             End If
