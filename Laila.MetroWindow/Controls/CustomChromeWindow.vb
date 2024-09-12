@@ -226,7 +226,9 @@ Namespace Controls
                 If _originalTopMost = False Then
                     deepOwner.Topmost = False
                 End If
-                deepOwner.Activate()
+            End If
+            If Not Me.Owner Is Nothing Then
+                Me.Owner.Activate()
             End If
 
             For Each w As Window In Application.Current.Windows
