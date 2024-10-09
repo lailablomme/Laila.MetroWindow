@@ -139,11 +139,11 @@ Namespace Controls
                         If Not _noPositionCorrection _
                         AndAlso Not (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
                             ' keep window within this screen
-                            Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
-                            Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
-                            Dim s As Forms.Screen = Forms.Screen.FromHandle(hWnd)
                             System.Windows.Application.Current.Dispatcher.BeginInvoke(
                                 Sub()
+                                    Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
+                                    Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
+                                    Dim s As Forms.Screen = Forms.Screen.FromHandle(hWnd)
                                     Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
                                     Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
                                     If Me.Top + Me.Height > s.WorkingArea.Bottom / (g.DpiY / 96.0) Then
@@ -247,22 +247,34 @@ Namespace Controls
 
                 ' window startup location
                 Dim newLeft As Double, newTop As Double, s As Forms.Screen, hWnd As IntPtr, g As System.Drawing.Graphics
-                If Me.WindowStartupLocation = WindowStartupLocation.CenterOwner AndAlso Not Me.Owner Is Nothing AndAlso Me.Owner.WindowState = WindowState.Normal Then
+                If Me.WindowStartupLocation = WindowStartupLocation.CenterOwner Then
                     ' center owner
-                    hWnd = New WindowInteropHelper(Me.Owner).Handle
-                    s = Forms.Screen.FromHandle(hWnd)
-
-                    newLeft = Me.Owner.Left + Me.Owner.Width / 2 - Me.Width / 2
-                    newTop = Me.Owner.Top + Me.Owner.Height / 2 - Me.Height / 2
+                    Dim owner As Window = If(Not Me.Owner Is Nothing, Me.Owner, Application.Current.MainWindow)
+                    If Not owner Is Nothing AndAlso owner.WindowState = WindowState.Normal Then
+                        newLeft = owner.Left + owner.Width / 2 - Me.Width / 2
+                        newTop = owner.Top + owner.Height / 2 - Me.Height / 2
+                    ElseIf Not owner Is Nothing AndAlso owner.WindowState = WindowState.Maximized Then
+                        hWnd = New WindowInteropHelper(owner).Handle
+                        s = Forms.Screen.FromHandle(hWnd)
+                        g = System.Drawing.Graphics.FromHwnd(hWnd)
+                        newLeft = s.WorkingArea.Left / (g.DpiX / 96.0) + s.WorkingArea.Width / (g.DpiX / 96.0) / 2 - Me.Width / 2
+                        newTop = s.WorkingArea.Top / (g.DpiX / 96.0) + s.WorkingArea.Height / (g.DpiX / 96.0) / 2 - Me.Height / 2
+                        g.Dispose()
+                    Else
+                        hWnd = New WindowInteropHelper(Me).Handle
+                        s = Forms.Screen.FromHandle(hWnd)
+                        g = System.Drawing.Graphics.FromHwnd(hWnd)
+                        newLeft = s.WorkingArea.Left / (g.DpiX / 96.0) + s.WorkingArea.Width / (g.DpiX / 96.0) / 2 - Me.Width / 2
+                        newTop = s.WorkingArea.Top / (g.DpiX / 96.0) + s.WorkingArea.Height / (g.DpiX / 96.0) / 2 - Me.Height / 2
+                        g.Dispose()
+                    End If
                 ElseIf Me.WindowStartupLocation <> WindowStartupLocation.Manual Then
                     ' center screen
                     hWnd = New WindowInteropHelper(Me).Handle
                     s = Forms.Screen.FromHandle(hWnd)
                     g = System.Drawing.Graphics.FromHwnd(hWnd)
-
                     newLeft = (s.WorkingArea.Left + s.WorkingArea.Width / 2) / (g.DpiX / 96.0) - Me.Width / 2
                     newTop = (s.WorkingArea.Top + s.WorkingArea.Height / 2) / (g.DpiY / 96.0) - Me.Height / 2
-
                     g.Dispose()
                 Else
                     ' manual
@@ -272,21 +284,6 @@ Namespace Controls
 
                 Me.Left = newLeft
                 Me.Top = newTop
-
-                hWnd = New WindowInteropHelper(Me).Handle
-                s = Forms.Screen.FromHandle(hWnd)
-                g = System.Drawing.Graphics.FromHwnd(hWnd)
-
-                If Me.Left < s.WorkingArea.Left / (g.DpiX / 96.0) Then
-                    Me.Left = s.WorkingArea.Left / (g.DpiX / 96.0)
-                End If
-                If Me.Top < s.WorkingArea.Top / (g.DpiX / 96.0) Then
-                    Me.Top = s.WorkingArea.Top / (g.DpiX / 96.0)
-                End If
-                If Not (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
-                    Me.MaxWidth = s.WorkingArea.Width / (g.DpiX / 96.0)
-                    Me.MaxHeight = s.WorkingArea.Height / (g.DpiX / 96.0)
-                End If
 
                 Me.OnLoadPosition()
 
@@ -344,6 +341,10 @@ Namespace Controls
                         Me.Top += 30
                         x = 0
 
+                        hWnd = New WindowInteropHelper(window).Handle
+                        s = Forms.Screen.FromHandle(hWnd)
+                        g = System.Drawing.Graphics.FromHwnd(hWnd)
+
                         If Me.Top + Me.Height > s.WorkingArea.Bottom / (g.DpiY / 96.0) Then
                             Me.Left = i * 30
                             Me.Top = 30
@@ -360,6 +361,8 @@ Namespace Controls
                                 Exit For
                             End If
                         End If
+
+                        g.Dispose()
                     End If
                 Next
 
@@ -370,8 +373,6 @@ Namespace Controls
                 _position.Width = Me.Width
                 _position.Height = Me.Height
                 _previousPosition = _position.Clone()
-
-                g.Dispose()
             End If
         End Sub
 
