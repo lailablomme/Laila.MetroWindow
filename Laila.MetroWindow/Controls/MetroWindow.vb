@@ -700,7 +700,7 @@ Namespace Controls
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
 
-            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, 96, 96, PixelFormats.Pbgra32)
+            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             _maximizeImage.Render(Me)
 
             w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
@@ -714,8 +714,8 @@ Namespace Controls
                 (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
             w.Content = New Image() With {
                 .Source = _maximizeImage,
-                .Width = Me.ActualWidth,
-                .Height = Me.ActualHeight,
+                .Width = Me.ActualWidth / _dpi.DpiScaleX,
+                .Height = Me.ActualHeight / _dpi.DpiScaleY,
                 .Margin = New Thickness(Me.Left, Me.Top, 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left
