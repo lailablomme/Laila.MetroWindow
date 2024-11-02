@@ -1,5 +1,6 @@
 ﻿Imports System.Collections.ObjectModel
 Imports System.Collections.Specialized
+Imports System.ComponentModel
 Imports System.Globalization
 Imports System.Windows
 Imports System.Windows.Controls
@@ -7,16 +8,19 @@ Imports System.Windows.Input
 Imports System.Windows.Interop
 Imports System.Windows.Markup
 Imports System.Windows.Media
+Imports System.Windows.Media.Animation
+Imports System.Windows.Media.Effects
+Imports System.Windows.Media.Imaging
 Imports Laila.MetroWindow.Data
 Imports Laila.MetroWindow.Helpers
 
 Namespace Controls
     Public Class MetroWindow
-        Inherits CustomChromeWindow
+        Inherits Window
 
-        Public Shared ReadOnly GlowColorProperty As DependencyProperty = DependencyProperty.Register("GlowColor", GetType(Media.Color), GetType(MetroWindow), New FrameworkPropertyMetadata(Media.Colors.Red, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
-        Public Shared ReadOnly GlowStyleProperty As DependencyProperty = DependencyProperty.Register("GlowStyle", GetType(GlowStyle), GetType(MetroWindow), New FrameworkPropertyMetadata(Data.GlowStyle.Glowing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly GlowSizeProperty As DependencyProperty = DependencyProperty.Register("GlowSize", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(15), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
+        Public Shared ReadOnly GlowStyleProperty As DependencyProperty = DependencyProperty.Register("GlowStyle", GetType(GlowStyle), GetType(MetroWindow), New FrameworkPropertyMetadata(Data.GlowStyle.Glowing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
+        Public Shared ReadOnly GlowColorProperty As DependencyProperty = DependencyProperty.Register("GlowColor", GetType(Media.Color), GetType(MetroWindow), New FrameworkPropertyMetadata(Media.Colors.Red, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly CaptionHeightProperty As DependencyProperty = DependencyProperty.Register("CaptionHeight", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(31), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly DoIntegrateMenuProperty As DependencyProperty = DependencyProperty.Register("DoIntegrateMenu", GetType(Boolean), GetType(MetroWindow), New FrameworkPropertyMetadata(True, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly DoShowChromeProperty As DependencyProperty = DependencyProperty.Register("DoShowChrome", GetType(Boolean), GetType(MetroWindow), New FrameworkPropertyMetadata(True, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
@@ -29,15 +33,6 @@ Namespace Controls
             End Get
             Set(ByVal value As Media.Color)
                 SetValue(GlowColorProperty, value)
-            End Set
-        End Property
-
-        Public Property GlowStyle() As Data.GlowStyle
-            Get
-                Return GetValue(GlowStyleProperty)
-            End Get
-            Set(ByVal value As Data.GlowStyle)
-                SetValue(GlowStyleProperty, value)
             End Set
         End Property
 
@@ -56,15 +51,6 @@ Namespace Controls
             End Get
             Set(ByVal value As Boolean)
                 SetValue(DoShowChromeProperty, value)
-            End Set
-        End Property
-
-        Public Property GlowSize() As Double
-            Get
-                Return GetValue(GlowSizeProperty)
-            End Get
-            Set(ByVal value As Double)
-                SetValue(GlowSizeProperty, value)
             End Set
         End Property
 
@@ -95,15 +81,34 @@ Namespace Controls
             End Set
         End Property
 
+        Private Const MINIMIZE_SPEED As Integer = 250
+        Private Const MAXIMIZE_SPEED As Integer = 125
+        Private Const WM_SYSCOMMAND As Integer = &H112
+        Private Const SC_MINIMIZE As Integer = &HF020
+        Private Const SC_MAXIMIZE As Integer = &HF030
+        Private Const SC_RESTORE As Integer = &HF120
+        Private Const WM_NCLBUTTONDBLCLK As Integer = &HA3
+
+        Private _minimizeImage As RenderTargetBitmap
+        Private _maximizeImage As RenderTargetBitmap
+        Private _skipMinimize As Boolean
+        Private _skipMaximize As Boolean
+        Private _s As System.Windows.Forms.Screen
+        Private _dpi As DpiScale
+        Private _isMinimized As Boolean = False
+        Private _wasMaximized As Boolean = False
+        Private _windowGuid As String = "9bf6faf8-7fdc-4525-93e5-9cd8f97209a4"
         Private _originalSizeToContent As SizeToContent
-        Private _titleBar As ContentControl
-        Private _rootGrid As Grid
-        Private _menuPlaceHolder As Grid
-        Private _textBlock As TextBlock
-        Private _iconButton As Button
-        Private _minimizeButton As Button
-        Private _maximizeRestoreButton As Button
-        Private _closeButton As Button
+        Private PART_TitleBar As ContentControl
+        Private PART_RootGrid As Grid
+        Private PART_RootBorder As Border
+        Private PART_MainBorder As Border
+        Private PART_MenuPlaceHolder As Grid
+        Private PART_Text As TextBlock
+        Private PART_IconButton As Button
+        Private PART_MinimizeButton As Button
+        Private PART_MaximizeRestoreButton As Button
+        Private PART_CloseButton As Button
         Private _isMenuIntegrated As Boolean = False
         Private _position As WindowPositionData = Nothing
         Private _previousPosition As WindowPositionData = New WindowPositionData()
@@ -125,7 +130,7 @@ Namespace Controls
                         Me.CenterTitle()
                     End If
                 End Sub
-
+            Dim b As Boolean
             AddHandler Me.SizeChanged,
                 Sub(sender2 As Object, e2 As EventArgs)
                     If Me.DoShowChrome Then
@@ -172,7 +177,7 @@ Namespace Controls
         End Sub
 
         Private Sub integrateMenu()
-            If Not _isMenuIntegrated AndAlso Me.DoIntegrateMenu AndAlso Not _menuPlaceHolder Is Nothing Then
+            If Not _isMenuIntegrated AndAlso Me.DoIntegrateMenu AndAlso Not PART_MenuPlaceHolder Is Nothing Then
                 Dim menus As IEnumerable(Of Menu) = FindVisualChildren(Of Menu)(Me)
                 If menus.Count > 0 Then
                     _isMenuIntegrated = True
@@ -189,7 +194,7 @@ Namespace Controls
                     ElseIf TypeOf p Is ContentControl Then
                         CType(p, ContentControl).Content = Nothing
                     End If
-                    _menuPlaceHolder.Children.Add(m)
+                    PART_MenuPlaceHolder.Children.Add(m)
                     m.Margin = New Thickness(0, 0, 5, 0)
 
                     AddHandler m.SizeChanged,
@@ -201,12 +206,11 @@ Namespace Controls
         End Sub
 
         Private Sub CenterTitle()
-            If Me.DoIntegrateMenu AndAlso Not _menuPlaceHolder Is Nothing AndAlso Not _textBlock Is Nothing AndAlso Me.DoShowChrome Then
-                Dim p As Point = _menuPlaceHolder.TransformToAncestor(Me).Transform(New Point(0, 0))
-                Dim leftCentered As Double = (Me.ActualWidth - _textBlock.ActualWidth) / 2
-                Dim diff As Double = leftCentered - p.X - _menuPlaceHolder.ActualWidth
-                If diff < 0 Then diff = 0
-                _textBlock.Margin = New Thickness(diff, _textBlock.Margin.Top, _textBlock.Margin.Right, _textBlock.Margin.Bottom)
+            If Me.DoIntegrateMenu AndAlso Not PART_MenuPlaceHolder Is Nothing AndAlso Not PART_Text Is Nothing AndAlso Me.DoShowChrome Then
+                Dim p As Point = PART_MenuPlaceHolder.TransformToAncestor(Me).Transform(New Point(PART_MenuPlaceHolder.ActualWidth, 0))
+                Dim leftCentered As Double = (PART_RootGrid.ActualWidth - PART_Text.ActualWidth) / 2
+                PART_Text.Margin = New Thickness(leftCentered, PART_Text.Margin.Top, PART_Text.Margin.Right, PART_Text.Margin.Bottom)
+                PART_Text.UpdateLayout()
             End If
         End Sub
 
@@ -226,14 +230,18 @@ Namespace Controls
         Protected Overrides Sub OnSourceInitialized(e As EventArgs)
             MyBase.OnSourceInitialized(e)
 
+            Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
+            Dim source As HwndSource = HwndSource.FromHwnd(hWnd)
+            source.AddHook(AddressOf HwndHook)
+
             If Me.DoShowChrome Then
                 Me.SetChromeWindow()
 
                 ' help size to content a hand
                 _originalSizeToContent = Me.SizeToContent
                 If Me.SizeToContent <> SizeToContent.Manual Then
-                    _rootGrid.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
-                    Dim size As Size = _rootGrid.DesiredSize
+                    PART_RootGrid.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
+                    Dim size As Size = PART_RootGrid.DesiredSize
                     Me.SizeToContent = SizeToContent.Manual
                     If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Width Then
                         Me.Width = size.Width
@@ -246,7 +254,7 @@ Namespace Controls
                 End If
 
                 ' window startup location
-                Dim newLeft As Double, newTop As Double, s As Forms.Screen, hWnd As IntPtr, g As System.Drawing.Graphics
+                Dim newLeft As Double, newTop As Double, s As Forms.Screen, g As System.Drawing.Graphics
                 If Me.WindowStartupLocation = WindowStartupLocation.CenterOwner Then
                     ' center owner
                     Dim owner As Window = If(Not Me.Owner Is Nothing, Me.Owner, Application.Current.MainWindow)
@@ -323,6 +331,9 @@ Namespace Controls
                     ' restore state, unless it was minimized
                     If _position.State <> WindowState.Minimized Then
                         Me.WindowState = _position.State
+                        If Me.WindowState = WindowState.Maximized Then
+                            Me.PART_RootBorder.Padding = New Thickness()
+                        End If
                     End If
                 End If
 
@@ -336,7 +347,9 @@ Namespace Controls
                 Dim hasBeenTheEnd As Boolean = False
                 For x = 0 To System.Windows.Application.Current.Windows.Count - 1
                     Dim window As Window = System.Windows.Application.Current.Windows(x)
-                    If Not window.Equals(Me) AndAlso window.Left = Me.Left AndAlso window.Top = Me.Top AndAlso window.Width = Me.Width AndAlso window.Height = Me.Height Then
+                    If Not window.Equals(Me) _
+                        AndAlso Math.Abs(window.Left - Me.Left) < 2 AndAlso Math.Abs(window.Top - Me.Top) < 2 _
+                        AndAlso Math.Abs(window.Width - Me.Width) < 2 AndAlso Math.Abs(window.Height - Me.Height) < 2 Then
                         Me.Left += 30
                         Me.Top += 30
                         x = 0
@@ -397,73 +410,86 @@ Namespace Controls
         Public Overrides Sub OnApplyTemplate()
             MyBase.OnApplyTemplate()
 
-            _menuPlaceHolder = Me.Template.FindName("PART_MenuPlaceHolder", Me)
-            _rootGrid = Me.Template.FindName("PART_RootGrid", Me)
-            _titleBar = Me.Template.FindName("PART_TitleBar", Me)
-            _textBlock = Me.Template.FindName("PART_Text", Me)
-            _iconButton = Me.Template.FindName("PART_IconButton", Me)
-            _minimizeButton = Me.Template.FindName("PART_MinimizeButton", Me)
-            _maximizeRestoreButton = Me.Template.FindName("PART_MaximizeRestoreButton", Me)
-            _closeButton = Me.Template.FindName("PART_CloseButton", Me)
+            PART_MenuPlaceHolder = Me.Template.FindName("PART_MenuPlaceHolder", Me)
+            PART_RootGrid = Me.Template.FindName("PART_RootGrid", Me)
+            PART_RootBorder = Me.Template.FindName("PART_RootBorder", Me)
+            PART_MainBorder = Me.Template.FindName("PART_MainBorder", Me)
+            PART_TitleBar = Me.Template.FindName("PART_TitleBar", Me)
+            PART_Text = Me.Template.FindName("PART_Text", Me)
+            PART_IconButton = Me.Template.FindName("PART_IconButton", Me)
+            PART_MinimizeButton = Me.Template.FindName("PART_MinimizeButton", Me)
+            PART_MaximizeRestoreButton = Me.Template.FindName("PART_MaximizeRestoreButton", Me)
+            PART_CloseButton = Me.Template.FindName("PART_CloseButton", Me)
 
             If Me.DoShowChrome Then
-                If Not _textBlock Is Nothing Then
-                    AddHandler _textBlock.SizeChanged,
-                    Sub()
-                        Me.CenterTitle()
-                    End Sub
+                If Not PART_RootBorder Is Nothing Then
+                    Dim paddingDescriptor As DependencyPropertyDescriptor = DependencyPropertyDescriptor.FromProperty(Border.PaddingProperty, GetType(Border))
+                    paddingDescriptor.AddValueChanged(PART_RootBorder,
+                        Sub(sender As Object, e As EventArgs)
+                            Me.CenterTitle()
+                        End Sub)
                 End If
 
-                If Not _titleBar Is Nothing Then
-                    _titleBar.Focus()
+                If Not PART_RootGrid Is Nothing Then
+                    AddHandler PART_RootGrid.SizeChanged,
+                        Sub()
+                            Me.CenterTitle()
+                        End Sub
+                End If
+
+                If Not PART_TitleBar Is Nothing Then
+                    PART_TitleBar.Focus()
                     Keyboard.ClearFocus()
-                    _titleBar.Focusable = False
+                    PART_TitleBar.Focusable = False
                 End If
 
-                If Not _iconButton Is Nothing Then
-                    AddHandler _iconButton.Click,
+                If Not PART_IconButton Is Nothing Then
+                    AddHandler PART_IconButton.Click,
                         Sub()
                             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
                             Dim s As System.Windows.Forms.Screen = Forms.Screen.FromHandle(hWnd)
                             Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
-                            Dim p As Point = _iconButton.PointToScreen(New Point(0, _iconButton.ActualHeight))
+                            Dim p As Point = PART_IconButton.PointToScreen(New Point(0, PART_IconButton.ActualHeight))
                             p.X = p.X / (g.DpiX / 96.0)
                             p.Y = p.Y / (g.DpiY / 96.0)
                             Me.ShowSystemMenu(p)
                             g.Dispose()
                         End Sub
-                    AddHandler _iconButton.MouseUp, AddressOf onShowSystemMenu
-                    AddHandler _iconButton.MouseDoubleClick,
+                    AddHandler PART_IconButton.MouseUp, AddressOf onShowSystemMenu
+                    AddHandler PART_IconButton.MouseDoubleClick,
                         Sub()
                             Me.Close()
                         End Sub
                 End If
-                If Not _minimizeButton Is Nothing Then
-                    AddHandler _minimizeButton.Click,
+
+                If Not PART_MinimizeButton Is Nothing Then
+                    AddHandler PART_MinimizeButton.Click,
                         Sub()
                             Me.Minimize()
                         End Sub
-                    AddHandler _minimizeButton.MouseUp, AddressOf onShowSystemMenu
+                    AddHandler PART_MinimizeButton.MouseUp, AddressOf onShowSystemMenu
                 End If
-                If Not _maximizeRestoreButton Is Nothing Then
-                    AddHandler _maximizeRestoreButton.Click,
+
+                If Not PART_MaximizeRestoreButton Is Nothing Then
+                    AddHandler PART_MaximizeRestoreButton.Click,
                         Sub()
                             If Me.WindowState = WindowState.Maximized Then
                                 Me.Restore()
-                                _maximizeRestoreButton.Content = "1"
+                                PART_MaximizeRestoreButton.Content = "1"
                             Else
                                 Me.Maximize()
-                                _maximizeRestoreButton.Content = "2"
+                                PART_MaximizeRestoreButton.Content = "2"
                             End If
                         End Sub
-                    AddHandler _maximizeRestoreButton.MouseUp, AddressOf onShowSystemMenu
+                    AddHandler PART_MaximizeRestoreButton.MouseUp, AddressOf onShowSystemMenu
                 End If
-                If Not _closeButton Is Nothing Then
-                    AddHandler _closeButton.Click,
-                         Sub()
-                             Me.Close()
-                         End Sub
-                    AddHandler _closeButton.MouseUp, AddressOf onShowSystemMenu
+
+                If Not PART_CloseButton Is Nothing Then
+                    AddHandler PART_CloseButton.Click,
+                        Sub()
+                            Me.Close()
+                        End Sub
+                    AddHandler PART_CloseButton.MouseUp, AddressOf onShowSystemMenu
                 End If
             End If
 
@@ -527,13 +553,13 @@ Namespace Controls
                     g.Dispose()
                 End If
 
-                If Not _rootGrid Is Nothing Then
-                    _rootGrid.Margin = margin
+                If Not PART_RootGrid Is Nothing Then
+                    PART_RootGrid.Margin = margin
                 End If
             Else
                 ' not maximized
-                If Not _rootGrid Is Nothing Then
-                    _rootGrid.Margin = New Thickness(0)
+                If Not PART_RootGrid Is Nothing Then
+                    PART_RootGrid.Margin = New Thickness(0)
                 End If
             End If
         End Sub
@@ -550,6 +576,397 @@ Namespace Controls
             End Get
             Set(value As WindowPositionData)
                 _position = value
+            End Set
+        End Property
+
+        Private Function makeWindow() As Window
+            Return New Window() With {
+                .WindowStyle = WindowStyle.None,
+                .AllowsTransparency = True,
+                .Background = Brushes.Transparent,
+                .ShowInTaskbar = False,
+                .Topmost = True,
+                .Tag = _windowGuid
+            }
+        End Function
+
+        Private Async Sub doRestoreAnimPt1(w As Window, wasMaximized As Boolean, callback As Action)
+            w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
+            w.Margin = New Thickness(
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
+            w.Content = New Image() With {
+                .Source = _minimizeImage,
+                .Width = 200,
+                .Height = Me.ActualHeight,
+                .Margin = New Thickness(If(Me.ShowInTaskbar, w.Width / 2 - 100, 0), _s.WorkingArea.Bottom / (_dpi.PixelsPerInchY / 96.0), 0, 0),
+                .VerticalAlignment = VerticalAlignment.Top,
+                .HorizontalAlignment = Windows.HorizontalAlignment.Left
+            }
+
+            w.Show()
+
+            Dim ease As SineEase = New SineEase()
+            ease.EasingMode = EasingMode.EaseInOut
+            Dim ta As ThicknessAnimation =
+                    New ThicknessAnimation(
+                        CType(w.Content, Image).Margin,
+                        New Thickness(If(wasMaximized, w.Left, Me.Left) - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0),
+                                      If(wasMaximized, w.Top, Me.Top) - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0), 0, 0),
+                        New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+            Dim da As DoubleAnimation = New DoubleAnimation(200, If(wasMaximized, w.ActualWidth, Me.Width), New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+            Dim da2 As DoubleAnimation = New DoubleAnimation(0, 1, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+            ta.EasingFunction = ease
+            da.EasingFunction = ease
+            da2.EasingFunction = ease
+
+            CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
+            CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da)
+            CType(w.Content, Image).BeginAnimation(Image.OpacityProperty, da2)
+
+            Await Task.Delay(MINIMIZE_SPEED)
+            _skipMinimize = False
+            SystemCommands.RestoreWindow(Me)
+
+            Await Task.Delay(100)
+
+            w.Close()
+
+            If Not callback Is Nothing Then
+                callback.Invoke()
+            End If
+        End Sub
+
+        Private Sub doMinimizeAnimPt1(w As Window, isMaximized As Boolean)
+            _minimizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, 96, 96, PixelFormats.Pbgra32)
+            _minimizeImage.Render(Me)
+
+            Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
+            _s = Forms.Screen.FromHandle(hWnd)
+            _dpi = VisualTreeHelper.GetDpi(Me)
+
+            w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
+            w.Margin = New Thickness(
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
+            w.Content = New Image() With {
+                .Source = _minimizeImage,
+                .Width = Me.ActualWidth,
+                .Height = Me.ActualHeight,
+                .Margin = New Thickness(If(isMaximized, w.Left, Me.Left) - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0),
+                                        If(isMaximized, w.Top, Me.Top) - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0), 0, 0),
+                .VerticalAlignment = VerticalAlignment.Top,
+                .HorizontalAlignment = Windows.HorizontalAlignment.Left
+            }
+
+            w.Show()
+        End Sub
+
+        Private Async Sub doMinimizeAnimPt2(w As Window)
+            Dim ease As SineEase = New SineEase()
+            ease.EasingMode = EasingMode.EaseInOut
+            Dim ta As ThicknessAnimation =
+                    New ThicknessAnimation(
+                        CType(w.Content, Image).Margin,
+                        New Thickness(If(Me.ShowInTaskbar, w.Width / 2 - 100, 0), _s.WorkingArea.Bottom / (_dpi.PixelsPerInchY / 96.0), 0, 0),
+                        New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+            Dim da As DoubleAnimation = New DoubleAnimation(Me.ActualWidth, 200, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+            Dim da2 As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MINIMIZE_SPEED)))
+            ta.EasingFunction = ease
+            da.EasingFunction = ease
+            da2.EasingFunction = ease
+
+            CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
+            CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da)
+            CType(w.Content, Image).BeginAnimation(Image.OpacityProperty, da2)
+
+            Await Task.Delay(MINIMIZE_SPEED)
+
+            w.Close()
+        End Sub
+
+        Private Sub doMaximizeAnimPt1(w As Window)
+            Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
+            _s = Forms.Screen.FromHandle(hWnd)
+            _dpi = VisualTreeHelper.GetDpi(Me)
+
+            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, 96, 96, PixelFormats.Pbgra32)
+            _maximizeImage.Render(Me)
+
+            w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
+            w.Margin = New Thickness(
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
+            w.Content = New Image() With {
+                .Source = _maximizeImage,
+                .Width = Me.ActualWidth,
+                .Height = Me.ActualHeight,
+                .Margin = New Thickness(Me.Left, Me.Top, 0, 0),
+                .VerticalAlignment = VerticalAlignment.Top,
+                .HorizontalAlignment = Windows.HorizontalAlignment.Left
+            }
+
+            w.Show()
+
+            Me.Opacity = 0
+        End Sub
+
+        Private Async Sub doMaximizeAnimPt2(w As Window, left As Double, top As Double, width As Double, height As Double)
+            Await Task.Delay(50)
+
+            Me.Maximize()
+            Me.PART_RootBorder.Padding = New Thickness(
+                left + Me.PART_RootBorder.Padding.Left,
+                top + Me.PART_RootBorder.Padding.Top,
+                (_s.WorkingArea.Right) / (_dpi.PixelsPerInchY / 96.0) - (Me.Left + Me.Width) + Me.PART_RootBorder.Padding.Right,
+                (_s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0) - (Me.Top + Me.Height) + Me.PART_RootBorder.Padding.Bottom)
+            Me.Opacity = 1
+
+            Await Task.Delay(50)
+
+            w.Close()
+
+            Dim ease As SineEase = New SineEase()
+            ease.EasingMode = EasingMode.EaseInOut
+            Dim ta As ThicknessAnimation = New ThicknessAnimation(Me.PART_RootBorder.Padding, New Thickness(), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            ta.EasingFunction = ease
+            AddHandler ta.Completed,
+                Sub(s, e)
+                    Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
+                    Me.PART_RootBorder.Padding = New Thickness()
+                End Sub
+            Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, ta)
+        End Sub
+
+        Private Async Sub doRestoreAnimPt2()
+            Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
+            _s = Forms.Screen.FromHandle(hWnd)
+            _dpi = VisualTreeHelper.GetDpi(Me)
+
+            Dim targetPadding As Thickness = New Thickness(
+                If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0) + _position.Left,
+                If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0) + _position.Top,
+                Me.GlowSize + (_s.WorkingArea.Right) / (_dpi.PixelsPerInchY / 96.0) - (_position.Left + _position.Width),
+                Me.GlowSize + (_s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0) - (_position.Top + _position.Height))
+            Dim ease As SineEase = New SineEase()
+            ease.EasingMode = EasingMode.EaseInOut
+            Dim ta As ThicknessAnimation = New ThicknessAnimation(Me.PART_RootBorder.Padding, targetPadding, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            ta.EasingFunction = ease
+            Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, ta)
+
+            Await Task.Delay(MAXIMIZE_SPEED + 50)
+
+            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
+            _maximizeImage.Render(Me)
+
+            Dim w As Window = makeWindow()
+
+            w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
+            w.Margin = New Thickness(
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
+            w.Content = New Image() With {
+                .Source = _maximizeImage,
+                .Width = Me.ActualWidth / _dpi.DpiScaleX,
+                .Height = Me.ActualHeight / _dpi.DpiScaleY,
+                .Margin = New Thickness(0, 0, 0, 0),
+                .VerticalAlignment = VerticalAlignment.Top,
+                .HorizontalAlignment = Windows.HorizontalAlignment.Left,
+                .UseLayoutRounding = True,
+                .SnapsToDevicePixels = True
+            }
+            w.WindowState = WindowState.Maximized
+
+            w.Show()
+
+            Await Task.Delay(10)
+
+            Dim effect As Effect = Me.PART_MainBorder.Effect
+            Me.PART_MainBorder.Effect = Nothing
+
+            Me.Restore()
+
+            Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
+            Me.PART_RootBorder.Padding = New Thickness(
+                If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                Me.GlowSize,
+                Me.GlowSize)
+
+            Me.PART_MainBorder.Effect = effect
+
+            Await Task.Delay(50)
+
+            w.Close()
+        End Sub
+
+        Private Function HwndHook(hwnd As IntPtr, msg As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
+            Select Case msg
+                Case WM_SYSCOMMAND
+                    Select Case wParam
+                        Case SC_MINIMIZE
+                            If Not _isMinimized Then
+                                _isMinimized = True
+                                _skipMinimize = True
+                                _wasMaximized = Me.WindowState = WindowState.Maximized
+
+                                Dim w As Window = makeWindow()
+
+                                doMinimizeAnimPt1(w, _wasMaximized)
+                                Windows.Application.Current.Dispatcher.BeginInvoke(
+                                    Sub()
+                                        doMinimizeAnimPt2(w)
+                                    End Sub)
+                            End If
+                        Case SC_RESTORE
+                            If _isMinimized Then
+                                _isMinimized = False
+
+                                Dim w As Window = makeWindow()
+
+                                If _skipMinimize Then
+                                    handled = True
+                                    doRestoreAnimPt1(w, _wasMaximized, Nothing)
+                                End If
+                            ElseIf Me.WindowState = WindowState.Maximized Then
+                                If Not _skipMinimize Then
+                                    handled = True
+                                    doRestoreAnimPt2()
+                                    _skipMinimize = True
+                                Else
+                                    _skipMinimize = False
+                                End If
+                            End If
+                        Case SC_MAXIMIZE
+                            If _isMinimized Then
+                                _isMinimized = False
+
+                                Dim w As Window = makeWindow()
+
+                                handled = True
+                                doRestoreAnimPt1(w, _wasMaximized,
+                                    Sub()
+                                        If Not _wasMaximized Then
+                                            w = makeWindow()
+                                            doMaximizeAnimPt1(w)
+                                            doMaximizeAnimPt2(w, Me.Left, Me.Top, Me.Width, Me.Height)
+                                        End If
+                                        _skipMaximize = True
+                                        If _wasMaximized Then Me.Maximize()
+                                    End Sub)
+                            Else
+                                If Not _skipMaximize Then
+                                    handled = True
+                                    Dim w As Window = makeWindow()
+                                    doMaximizeAnimPt1(w)
+                                    doMaximizeAnimPt2(w, Me.Left, Me.Top, Me.Width, Me.Height)
+                                    _skipMaximize = True
+                                Else
+                                    _skipMaximize = False
+                                End If
+                            End If
+                    End Select
+                Case WM_NCLBUTTONDBLCLK
+                    If Me.WindowState = WindowState.Maximized Then
+                        handled = True
+                        doRestoreAnimPt2()
+                        _skipMaximize = True
+                    Else
+                        handled = True
+                        Dim w As Window = makeWindow()
+                        doMaximizeAnimPt1(w)
+                        doMaximizeAnimPt2(w, Me.Left, Me.Top, Me.Width, Me.Height)
+                        _skipMaximize = True
+                    End If
+            End Select
+
+            Return IntPtr.Zero
+        End Function
+
+        Public Sub Minimize()
+            If Me.ResizeMode <> ResizeMode.NoResize Then
+                SystemCommands.MinimizeWindow(Me)
+            End If
+        End Sub
+
+        Public Sub Maximize()
+            If Me.ResizeMode <> ResizeMode.CanMinimize AndAlso Me.ResizeMode <> ResizeMode.NoResize Then
+                SystemCommands.MaximizeWindow(Me)
+            End If
+        End Sub
+
+        Public Sub Restore()
+            SystemCommands.RestoreWindow(Me)
+        End Sub
+
+        Public Sub ShowSystemMenu(p As Point)
+            SystemCommands.ShowSystemMenu(Me, p)
+        End Sub
+
+        Protected Overrides Sub OnClosing(e As CancelEventArgs)
+            MyBase.OnClosing(e)
+
+            ' avoid main window disappearing after close
+            If Not e.Cancel AndAlso Not Me.Owner Is Nothing Then
+                Dim deepOwner As Window = Me
+                While Not deepOwner.Owner Is Nothing
+                    deepOwner = deepOwner.Owner
+                End While
+                If Not Me.Equals(deepOwner) Then
+                    deepOwner.Activate()
+                End If
+            End If
+        End Sub
+
+        Protected Overrides Sub OnClosed(e As EventArgs)
+            MyBase.OnClosed(e)
+
+            If Not Me.Owner Is Nothing Then
+                Me.Owner.Activate()
+            End If
+
+            For Each w As Window In Application.Current.Windows
+                If _windowGuid.Equals(w.Tag) Then
+                    w.Close()
+                End If
+            Next
+        End Sub
+
+        Public Property GlowSize() As Double
+            Get
+                Return GetValue(GlowSizeProperty)
+            End Get
+            Set(ByVal value As Double)
+                SetValue(GlowSizeProperty, value)
+            End Set
+        End Property
+
+        Public Property GlowStyle() As Data.GlowStyle
+            Get
+                Return GetValue(GlowStyleProperty)
+            End Get
+            Set(ByVal value As Data.GlowStyle)
+                SetValue(GlowStyleProperty, value)
             End Set
         End Property
     End Class
