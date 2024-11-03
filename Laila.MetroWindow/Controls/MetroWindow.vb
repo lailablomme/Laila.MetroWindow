@@ -643,6 +643,10 @@ Namespace Controls
             Await Task.Delay(100)
 
             w.Close()
+            CType(w.Content, Image).Source = Nothing
+            _minimizeImage = Nothing
+            w = Nothing
+            GC.Collect()
 
             If Not callback Is Nothing Then
                 callback.Invoke()
@@ -750,6 +754,10 @@ Namespace Controls
             Await Task.Delay(50)
 
             w.Close()
+            CType(w.Content, Image).Source = Nothing
+            _maximizeImage = Nothing
+            w = Nothing
+            GC.Collect()
 
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
@@ -833,6 +841,10 @@ Namespace Controls
             Await Task.Delay(50)
 
             w.Close()
+            CType(w.Content, Image).Source = Nothing
+            _maximizeImage = Nothing
+            w = Nothing
+            GC.Collect()
         End Sub
 
         Private Async Sub doCloseAnimation()
@@ -875,17 +887,23 @@ Namespace Controls
             ease.EasingMode = EasingMode.EaseInOut
             Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
             Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
-                        New Thickness(CType(w.Content, Image).Margin.Left + 100,
-                                      CType(w.Content, Image).Margin.Top + 100,
+                        New Thickness(CType(w.Content, Image).Margin.Left + Me.ActualWidth * 0.1,
+                                      CType(w.Content, Image).Margin.Top + Me.ActualHeight * 0.1,
                                       0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, Math.Max(CType(w.Content, Image).Width - 200, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, Math.Max(CType(w.Content, Image).Height - 200, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, Math.Max(CType(w.Content, Image).Width - Me.ActualWidth * 0.2, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, Math.Max(CType(w.Content, Image).Height - Me.ActualHeight * 0.2, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
             da.EasingFunction = ease
             ta.EasingFunction = ease
             da2.EasingFunction = ease
             da3.EasingFunction = ease
             AddHandler da.Completed,
                 Sub(s2 As Object, e2 As EventArgs)
+                    w.Close()
+                    CType(w.Content, Image).Source = Nothing
+                    _closeImage = Nothing
+                    w = Nothing
+                    GC.Collect()
+
                     _isReallyClosing = True
                     Me.Close()
                 End Sub
