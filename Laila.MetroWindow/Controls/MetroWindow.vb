@@ -27,13 +27,14 @@ Namespace Controls
         Public Shared ReadOnly DoShowChromeProperty As DependencyProperty = DependencyProperty.Register("DoShowChrome", GetType(Boolean), GetType(MetroWindow), New FrameworkPropertyMetadata(True, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly LeftButtonsProperty As DependencyProperty = DependencyProperty.Register("LeftButtons", GetType(ObservableCollection(Of ButtonData)), GetType(MetroWindow), New FrameworkPropertyMetadata(Nothing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly RightButtonsProperty As DependencyProperty = DependencyProperty.Register("RightButtons", GetType(ObservableCollection(Of ButtonData)), GetType(MetroWindow), New FrameworkPropertyMetadata(Nothing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
+        Public Shared ReadOnly ActualWindowStateProperty As DependencyProperty = DependencyProperty.Register("ActualWindowState", GetType(WindowState), GetType(MetroWindow), New FrameworkPropertyMetadata(WindowState.Normal, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
 
         Public Property GlowColor() As Media.Color
             Get
                 Return GetValue(GlowColorProperty)
             End Get
             Set(ByVal value As Media.Color)
-                SetValue(GlowColorProperty, value)
+                SetCurrentValue(GlowColorProperty, value)
             End Set
         End Property
 
@@ -42,7 +43,7 @@ Namespace Controls
                 Return GetValue(DoIntegrateMenuProperty)
             End Get
             Set(ByVal value As Boolean)
-                SetValue(DoIntegrateMenuProperty, value)
+                SetCurrentValue(DoIntegrateMenuProperty, value)
             End Set
         End Property
 
@@ -51,7 +52,7 @@ Namespace Controls
                 Return GetValue(DoShowChromeProperty)
             End Get
             Set(ByVal value As Boolean)
-                SetValue(DoShowChromeProperty, value)
+                SetCurrentValue(DoShowChromeProperty, value)
             End Set
         End Property
 
@@ -60,7 +61,7 @@ Namespace Controls
                 Return GetValue(CaptionHeightProperty)
             End Get
             Set(ByVal value As Double)
-                SetValue(CaptionHeightProperty, value)
+                SetCurrentValue(CaptionHeightProperty, value)
             End Set
         End Property
 
@@ -69,7 +70,7 @@ Namespace Controls
                 Return GetValue(LeftButtonsProperty)
             End Get
             Set(ByVal value As ObservableCollection(Of ButtonData))
-                SetValue(LeftButtonsProperty, value)
+                SetCurrentValue(LeftButtonsProperty, value)
             End Set
         End Property
 
@@ -78,7 +79,7 @@ Namespace Controls
                 Return GetValue(RightButtonsProperty)
             End Get
             Set(ByVal value As ObservableCollection(Of ButtonData))
-                SetValue(RightButtonsProperty, value)
+                SetCurrentValue(RightButtonsProperty, value)
             End Set
         End Property
 
@@ -101,7 +102,6 @@ Namespace Controls
         Private _windowGuid As String = "9bf6faf8-7fdc-4525-93e5-9cd8f97209a4"
         Private _originalSizeToContent As SizeToContent
         Private PART_TitleBar As ContentControl
-        Private PART_RootGrid As Grid
         Private PART_RootBorder As Border
         Private PART_MainBorder As Border
         Private PART_MenuPlaceHolder As Grid
@@ -115,6 +115,7 @@ Namespace Controls
         Private _previousPosition As WindowPositionData = New WindowPositionData()
         Private _noPositionCorrection As Boolean = False
         Private _dontUpdatePosition As Boolean = True
+        Private _isAnimating As Boolean
 
         Shared Sub New()
             DefaultStyleKeyProperty.OverrideMetadata(GetType(MetroWindow), New FrameworkPropertyMetadata(GetType(MetroWindow)))
@@ -209,7 +210,7 @@ Namespace Controls
         Private Sub CenterTitle()
             If Me.DoIntegrateMenu AndAlso Not PART_MenuPlaceHolder Is Nothing AndAlso Not PART_Text Is Nothing AndAlso Me.DoShowChrome Then
                 Dim p As Point = PART_MenuPlaceHolder.TransformToAncestor(Me).Transform(New Point(PART_MenuPlaceHolder.ActualWidth, 0))
-                Dim leftCentered As Double = (PART_RootGrid.ActualWidth - PART_Text.ActualWidth) / 2
+                Dim leftCentered As Double = (PART_RootBorder.ActualWidth - PART_Text.ActualWidth) / 2
                 PART_Text.Margin = New Thickness(leftCentered, PART_Text.Margin.Top, PART_Text.Margin.Right, PART_Text.Margin.Bottom)
                 PART_Text.UpdateLayout()
             End If
@@ -241,8 +242,8 @@ Namespace Controls
                 ' help size to content a hand
                 _originalSizeToContent = Me.SizeToContent
                 If Me.SizeToContent <> SizeToContent.Manual Then
-                    PART_RootGrid.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
-                    Dim size As Size = PART_RootGrid.DesiredSize
+                    PART_RootBorder.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
+                    Dim size As Size = PART_RootBorder.DesiredSize
                     Me.SizeToContent = SizeToContent.Manual
                     If _originalSizeToContent = SizeToContent.WidthAndHeight OrElse _originalSizeToContent = SizeToContent.Width Then
                         Me.Width = size.Width
@@ -332,9 +333,6 @@ Namespace Controls
                     ' restore state, unless it was minimized
                     If _position.State <> WindowState.Minimized Then
                         Me.WindowState = _position.State
-                        If Me.WindowState = WindowState.Maximized Then
-                            Me.PART_RootBorder.Padding = New Thickness()
-                        End If
                     End If
                 End If
 
@@ -412,7 +410,6 @@ Namespace Controls
             MyBase.OnApplyTemplate()
 
             PART_MenuPlaceHolder = Me.Template.FindName("PART_MenuPlaceHolder", Me)
-            PART_RootGrid = Me.Template.FindName("PART_RootGrid", Me)
             PART_RootBorder = Me.Template.FindName("PART_RootBorder", Me)
             PART_MainBorder = Me.Template.FindName("PART_MainBorder", Me)
             PART_TitleBar = Me.Template.FindName("PART_TitleBar", Me)
@@ -431,8 +428,8 @@ Namespace Controls
                         End Sub)
                 End If
 
-                If Not PART_RootGrid Is Nothing Then
-                    AddHandler PART_RootGrid.SizeChanged,
+                If Not PART_RootBorder Is Nothing Then
+                    AddHandler PART_RootBorder.SizeChanged,
                         Sub()
                             Me.CenterTitle()
                         End Sub
@@ -530,6 +527,10 @@ Namespace Controls
                 End If
 
                 setMargin()
+
+                If Me.WindowState = WindowState.Maximized AndAlso Not _isAnimating Then
+                    Me.PART_RootBorder.Padding = New Thickness()
+                End If
             End If
         End Sub
 
@@ -538,7 +539,7 @@ Namespace Controls
                 ' set maximized margins to not get under the taskbar
                 Dim margin As Thickness = New Thickness()
                 If System.Environment.OSVersion.Version.Major >= 6 Then
-                    margin = New Thickness(7)
+                    margin = New Thickness(6)
                 Else
                     margin = New Thickness(4)
                 End If
@@ -554,13 +555,13 @@ Namespace Controls
                     g.Dispose()
                 End If
 
-                If Not PART_RootGrid Is Nothing Then
-                    PART_RootGrid.Margin = margin
+                If Not PART_RootBorder Is Nothing Then
+                    PART_RootBorder.Margin = margin
                 End If
             Else
                 ' not maximized
-                If Not PART_RootGrid Is Nothing Then
-                    PART_RootGrid.Margin = New Thickness(0)
+                If Not PART_RootBorder Is Nothing Then
+                    PART_RootBorder.Margin = New Thickness(0)
                 End If
             End If
         End Sub
@@ -630,6 +631,7 @@ Namespace Controls
             CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da)
             CType(w.Content, Image).BeginAnimation(Image.OpacityProperty, da2)
 
+            Me.ActualWindowState = WindowState.Normal
             Await Task.Delay(MINIMIZE_SPEED)
             _skipMinimize = False
             SystemCommands.RestoreWindow(Me)
@@ -693,6 +695,7 @@ Namespace Controls
 
             Await Task.Delay(MINIMIZE_SPEED)
 
+            Me.ActualWindowState = WindowState.Minimized
             w.Close()
         End Sub
 
@@ -728,9 +731,11 @@ Namespace Controls
         End Sub
 
         Private Async Sub doMaximizeAnimPt2(w As Window, left As Double, top As Double, width As Double, height As Double)
+            _isAnimating = True
             Await Task.Delay(50)
 
             Me.Maximize()
+
             Me.PART_RootBorder.Padding = New Thickness(
                 left + Me.PART_RootBorder.Padding.Left,
                 top + Me.PART_RootBorder.Padding.Top,
@@ -750,6 +755,8 @@ Namespace Controls
                 Sub(s, e)
                     Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
                     Me.PART_RootBorder.Padding = New Thickness()
+                    _isAnimating = False
+                    Me.ActualWindowState = WindowState.Maximized
                 End Sub
             Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, ta)
         End Sub
@@ -770,6 +777,7 @@ Namespace Controls
             ta.EasingFunction = ease
             Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, ta)
 
+            Me.ActualWindowState = WindowState.Normal
             Await Task.Delay(MAXIMIZE_SPEED + 50)
 
             _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
@@ -798,16 +806,15 @@ Namespace Controls
             }
             w.WindowState = WindowState.Maximized
 
-            w.Show()
-
-            Await Task.Delay(50)
-
             Dim effect As Effect = Me.PART_MainBorder.Effect
             Me.PART_MainBorder.Effect = Nothing
 
-            Me.Restore()
+            w.Show()
+            Me.Opacity = 0
 
             Await Task.Delay(50)
+
+            Me.Restore()
 
             Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
             Me.PART_RootBorder.Padding = New Thickness(
@@ -815,8 +822,9 @@ Namespace Controls
                 If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
                 Me.GlowSize,
                 Me.GlowSize)
-
             Me.PART_MainBorder.Effect = effect
+
+            Me.Opacity = 1
 
             Await Task.Delay(50)
 
@@ -960,7 +968,7 @@ Namespace Controls
                 Return GetValue(GlowSizeProperty)
             End Get
             Set(ByVal value As Double)
-                SetValue(GlowSizeProperty, value)
+                SetCurrentValue(GlowSizeProperty, value)
             End Set
         End Property
 
@@ -969,7 +977,16 @@ Namespace Controls
                 Return GetValue(GlowStyleProperty)
             End Get
             Set(ByVal value As Data.GlowStyle)
-                SetValue(GlowStyleProperty, value)
+                SetCurrentValue(GlowStyleProperty, value)
+            End Set
+        End Property
+
+        Public Property ActualWindowState As WindowState
+            Get
+                Return GetValue(ActualWindowStateProperty)
+            End Get
+            Set(ByVal value As WindowState)
+                SetCurrentValue(ActualWindowStateProperty, value)
             End Set
         End Property
     End Class
