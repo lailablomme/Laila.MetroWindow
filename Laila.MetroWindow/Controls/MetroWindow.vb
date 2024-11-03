@@ -2,6 +2,7 @@
 Imports System.Collections.Specialized
 Imports System.ComponentModel
 Imports System.Globalization
+Imports System.Threading
 Imports System.Windows
 Imports System.Windows.Controls
 Imports System.Windows.Input
@@ -700,7 +701,7 @@ Namespace Controls
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
 
-            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
+            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             _maximizeImage.Render(Me)
 
             w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
@@ -714,8 +715,8 @@ Namespace Controls
                 (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
             w.Content = New Image() With {
                 .Source = _maximizeImage,
-                .Width = Me.ActualWidth / _dpi.DpiScaleX,
-                .Height = Me.ActualHeight / _dpi.DpiScaleY,
+                .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
+                .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
                 .Margin = New Thickness(Me.Left, Me.Top, 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left
@@ -771,7 +772,7 @@ Namespace Controls
 
             Await Task.Delay(MAXIMIZE_SPEED + 50)
 
-            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth, Me.ActualHeight, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
+            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             _maximizeImage.Render(Me)
 
             Dim w As Window = makeWindow()
@@ -787,8 +788,8 @@ Namespace Controls
                 (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
             w.Content = New Image() With {
                 .Source = _maximizeImage,
-                .Width = Me.ActualWidth / _dpi.DpiScaleX,
-                .Height = Me.ActualHeight / _dpi.DpiScaleY,
+                .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
+                .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
                 .Margin = New Thickness(0, 0, 0, 0),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
