@@ -800,12 +800,14 @@ Namespace Controls
 
             w.Show()
 
-            Await Task.Delay(10)
+            Await Task.Delay(50)
 
             Dim effect As Effect = Me.PART_MainBorder.Effect
             Me.PART_MainBorder.Effect = Nothing
 
             Me.Restore()
+
+            Await Task.Delay(50)
 
             Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
             Me.PART_RootBorder.Padding = New Thickness(
@@ -850,12 +852,12 @@ Namespace Controls
                                     doRestoreAnimPt1(w, _wasMaximized, Nothing)
                                 End If
                             ElseIf Me.WindowState = WindowState.Maximized Then
-                                If Not _skipMinimize Then
+                                If Not _skipMaximize Then
                                     handled = True
                                     doRestoreAnimPt2()
-                                    _skipMinimize = True
+                                    _skipMaximize = True
                                 Else
-                                    _skipMinimize = False
+                                    _skipMaximize = False
                                 End If
                             End If
                         Case SC_MAXIMIZE
