@@ -210,7 +210,7 @@ Namespace Controls
         Private Sub CenterTitle()
             If Me.DoIntegrateMenu AndAlso Not PART_MenuPlaceHolder Is Nothing AndAlso Not PART_Text Is Nothing AndAlso Me.DoShowChrome Then
                 Dim p As Point = PART_MenuPlaceHolder.TransformToAncestor(Me).Transform(New Point(PART_MenuPlaceHolder.ActualWidth, 0))
-                Dim leftCentered As Double = (PART_RootBorder.ActualWidth - PART_Text.ActualWidth) / 2
+                Dim leftCentered As Double = (PART_MainBorder.ActualWidth - PART_Text.ActualWidth) / 2
                 PART_Text.Margin = New Thickness(leftCentered, PART_Text.Margin.Top, PART_Text.Margin.Right, PART_Text.Margin.Bottom)
                 PART_Text.UpdateLayout()
             End If
@@ -428,8 +428,8 @@ Namespace Controls
                         End Sub)
                 End If
 
-                If Not PART_RootBorder Is Nothing Then
-                    AddHandler PART_RootBorder.SizeChanged,
+                If Not PART_MainBorder Is Nothing Then
+                    AddHandler PART_MainBorder.SizeChanged,
                         Sub()
                             Me.CenterTitle()
                         End Sub
