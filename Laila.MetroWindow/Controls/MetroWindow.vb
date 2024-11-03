@@ -85,6 +85,7 @@ Namespace Controls
 
         Private Const MINIMIZE_SPEED As Integer = 250
         Private Const MAXIMIZE_SPEED As Integer = 125
+        Private Const CLOSE_SPEED As Integer = 250
         Private Const WM_SYSCOMMAND As Integer = &H112
         Private Const SC_MINIMIZE As Integer = &HF020
         Private Const SC_MAXIMIZE As Integer = &HF030
@@ -93,6 +94,7 @@ Namespace Controls
 
         Private _minimizeImage As RenderTargetBitmap
         Private _maximizeImage As RenderTargetBitmap
+        Private _closeImage As RenderTargetBitmap
         Private _skipMinimize As Boolean
         Private _skipMaximize As Boolean
         Private _s As System.Windows.Forms.Screen
@@ -116,6 +118,7 @@ Namespace Controls
         Private _noPositionCorrection As Boolean = False
         Private _dontUpdatePosition As Boolean = True
         Private _isAnimating As Boolean
+        Private _isReallyClosing As Boolean
 
         Shared Sub New()
             DefaultStyleKeyProperty.OverrideMetadata(GetType(MetroWindow), New FrameworkPropertyMetadata(GetType(MetroWindow)))
@@ -588,7 +591,8 @@ Namespace Controls
                 .Background = Brushes.Transparent,
                 .ShowInTaskbar = False,
                 .Topmost = True,
-                .Tag = _windowGuid
+                .Tag = _windowGuid,
+                .IsHitTestVisible = False
             }
         End Function
 
@@ -831,6 +835,65 @@ Namespace Controls
             w.Close()
         End Sub
 
+        Private Async Sub doCloseAnimation()
+            Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
+            _s = Forms.Screen.FromHandle(hWnd)
+            _dpi = VisualTreeHelper.GetDpi(Me)
+
+            Dim w As Window = makeWindow()
+
+            _closeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
+            _closeImage.Render(Me)
+
+            w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+            w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
+            w.Margin = New Thickness(
+                (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
+            w.Content = New Image() With {
+                .Source = _closeImage,
+                .Width = _closeImage.PixelWidth / _dpi.DpiScaleX,
+                .Height = _closeImage.PixelHeight / _dpi.DpiScaleY,
+                .Margin = If(Me.WindowState = WindowState.Maximized, New Thickness(), New Thickness(Me.Left, Me.Top, 0, 0)),
+                .VerticalAlignment = VerticalAlignment.Top,
+                .HorizontalAlignment = Windows.HorizontalAlignment.Left
+            }
+            w.WindowState = Me.WindowState
+
+            w.Show()
+
+            Await Task.Delay(50)
+
+            Me.Opacity = 0
+
+            Dim ease As SineEase = New SineEase()
+            ease.EasingMode = EasingMode.EaseInOut
+            Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
+                        New Thickness(CType(w.Content, Image).Margin.Left + 50,
+                                      CType(w.Content, Image).Margin.Top + 50,
+                                      0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, Math.Max(CType(w.Content, Image).Width - 100, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, Math.Max(CType(w.Content, Image).Height - 100, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            da.EasingFunction = ease
+            ta.EasingFunction = ease
+            da2.EasingFunction = ease
+            da3.EasingFunction = ease
+            AddHandler da.Completed,
+                Sub(s2 As Object, e2 As EventArgs)
+                    _isReallyClosing = True
+                    Me.Close()
+                End Sub
+            w.BeginAnimation(Window.OpacityProperty, da)
+            CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
+            CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da2)
+            CType(w.Content, Image).BeginAnimation(Image.HeightProperty, da3)
+        End Sub
+
         Private Function HwndHook(hwnd As IntPtr, msg As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
             Select Case msg
                 Case WM_SYSCOMMAND
@@ -935,16 +998,25 @@ Namespace Controls
         End Sub
 
         Protected Overrides Sub OnClosing(e As CancelEventArgs)
-            MyBase.OnClosing(e)
+            If Not _isReallyClosing Then MyBase.OnClosing(e)
 
-            ' avoid main window disappearing after close
-            If Not e.Cancel AndAlso Not Me.Owner Is Nothing Then
-                Dim deepOwner As Window = Me
-                While Not deepOwner.Owner Is Nothing
-                    deepOwner = deepOwner.Owner
-                End While
-                If Not Me.Equals(deepOwner) Then
-                    deepOwner.Activate()
+            If Not e.Cancel Then
+                If Not _isReallyClosing Then
+                    If Not Me.WindowState = WindowState.Minimized Then
+                        e.Cancel = True
+                        doCloseAnimation()
+                    End If
+                Else
+                    ' avoid main window disappearing after close
+                    If Not Me.Owner Is Nothing Then
+                        Dim deepOwner As Window = Me
+                        While Not deepOwner.Owner Is Nothing
+                            deepOwner = deepOwner.Owner
+                        End While
+                        If Not Me.Equals(deepOwner) Then
+                            deepOwner.Activate()
+                        End If
+                    End If
                 End If
             End If
         End Sub
