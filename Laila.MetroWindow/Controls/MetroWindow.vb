@@ -860,7 +860,8 @@ Namespace Controls
                 .Height = _closeImage.PixelHeight / _dpi.DpiScaleY,
                 .Margin = If(Me.WindowState = WindowState.Maximized, New Thickness(), New Thickness(Me.Left, Me.Top, 0, 0)),
                 .VerticalAlignment = VerticalAlignment.Top,
-                .HorizontalAlignment = Windows.HorizontalAlignment.Left
+                .HorizontalAlignment = Windows.HorizontalAlignment.Left,
+                .Stretch = Stretch.Fill
             }
             w.WindowState = Me.WindowState
 
@@ -874,11 +875,11 @@ Namespace Controls
             ease.EasingMode = EasingMode.EaseInOut
             Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
             Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
-                        New Thickness(CType(w.Content, Image).Margin.Left + 50,
-                                      CType(w.Content, Image).Margin.Top + 50,
+                        New Thickness(CType(w.Content, Image).Margin.Left + 100,
+                                      CType(w.Content, Image).Margin.Top + 100,
                                       0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, Math.Max(CType(w.Content, Image).Width - 100, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, Math.Max(CType(w.Content, Image).Height - 100, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, Math.Max(CType(w.Content, Image).Width - 200, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, Math.Max(CType(w.Content, Image).Height - 200, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
             da.EasingFunction = ease
             ta.EasingFunction = ease
             da2.EasingFunction = ease
@@ -1001,11 +1002,9 @@ Namespace Controls
             If Not _isReallyClosing Then MyBase.OnClosing(e)
 
             If Not e.Cancel Then
-                If Not _isReallyClosing Then
-                    If Not Me.WindowState = WindowState.Minimized Then
-                        e.Cancel = True
-                        doCloseAnimation()
-                    End If
+                If Not _isReallyClosing AndAlso Not Me.WindowState = WindowState.Minimized Then
+                    e.Cancel = True
+                    doCloseAnimation()
                 Else
                     ' avoid main window disappearing after close
                     If Not Me.Owner Is Nothing Then
