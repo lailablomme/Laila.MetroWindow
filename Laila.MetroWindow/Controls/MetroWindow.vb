@@ -802,7 +802,7 @@ Namespace Controls
             AddHandler ta.Completed,
                 Async Sub(s, e)
                     If _isAnimating Then
-                        Await Task.Delay(50)
+                        Await Task.Delay(10)
 
                         Application.Current.Dispatcher.Invoke(
                             Sub()
@@ -810,6 +810,9 @@ Namespace Controls
 
                         _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
                         _maximizeImage.Render(Me)
+
+                        Dim effect As Effect = Me.PART_MainBorder.Effect
+                        Me.PART_MainBorder.Effect = Nothing
 
                         Dim w As Window = makeWindow()
 
@@ -850,17 +853,13 @@ Namespace Controls
                             Me.GlowSize,
                             Me.GlowSize)
 
-                        Application.Current.Dispatcher.Invoke(
-                            Sub()
-                            End Sub, Threading.DispatcherPriority.ContextIdle)
-
                         Me.Opacity = 1
                         _isAnimating = False
+                        Me.PART_MainBorder.Effect = effect
 
                         Application.Current.Dispatcher.Invoke(
                             Sub()
                             End Sub, Threading.DispatcherPriority.ContextIdle)
-                        Await Task.Delay(50)
 
                         w.Close()
                         CType(w.Content, Image).Source = Nothing
