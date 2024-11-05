@@ -796,7 +796,9 @@ Namespace Controls
             ta.EasingFunction = ease
             AddHandler ta.Completed,
                 Async Sub(s, e)
-                    Await Task.Delay(50)
+                    Application.Current.Dispatcher.Invoke(
+                        Sub()
+                        End Sub, Threading.DispatcherPriority.ContextIdle)
 
                     _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
                     _maximizeImage.Render(Me)
@@ -827,7 +829,9 @@ Namespace Controls
                     w.Show()
                     Me.Opacity = 0
 
-                    Await Task.Delay(250)
+                    Application.Current.Dispatcher.Invoke(
+                        Sub()
+                        End Sub, Threading.DispatcherPriority.ContextIdle)
 
                     Me.Restore()
 
@@ -838,8 +842,15 @@ Namespace Controls
                         Me.GlowSize,
                         Me.GlowSize)
 
+                    Application.Current.Dispatcher.Invoke(
+                        Sub()
+                        End Sub, Threading.DispatcherPriority.ContextIdle)
+
                     Me.Opacity = 1
 
+                    Application.Current.Dispatcher.Invoke(
+                        Sub()
+                        End Sub, Threading.DispatcherPriority.ContextIdle)
                     Await Task.Delay(50)
 
                     w.Close()
