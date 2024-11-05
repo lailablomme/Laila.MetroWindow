@@ -135,7 +135,7 @@ Namespace Controls
                         Me.CenterTitle()
                     End If
                 End Sub
-            Dim b As Boolean
+
             AddHandler Me.SizeChanged,
                 Sub(sender2 As Object, e2 As EventArgs)
                     Application.Current.Dispatcher.Invoke(
@@ -794,64 +794,63 @@ Namespace Controls
             ease.EasingMode = EasingMode.EaseInOut
             Dim ta As ThicknessAnimation = New ThicknessAnimation(Me.PART_RootBorder.Padding, targetPadding, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             ta.EasingFunction = ease
+            AddHandler ta.Completed,
+                Async Sub(s, e)
+                    Await Task.Delay(50)
+
+                    _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
+                    _maximizeImage.Render(Me)
+
+                    Dim w As Window = makeWindow()
+
+                    w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+                    w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+                    w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+                    w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
+                    w.Margin = New Thickness(
+                        (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                        (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                        (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                        (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
+                    w.Content = New Image() With {
+                        .Source = _maximizeImage,
+                        .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
+                        .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
+                        .Margin = New Thickness(0, 0, 0, 0),
+                        .VerticalAlignment = VerticalAlignment.Top,
+                        .HorizontalAlignment = Windows.HorizontalAlignment.Left,
+                        .UseLayoutRounding = True,
+                        .SnapsToDevicePixels = True
+                    }
+                    w.WindowState = WindowState.Maximized
+
+                    w.Show()
+                    Me.Opacity = 0
+
+                    Await Task.Delay(250)
+
+                    Me.Restore()
+
+                    Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
+                    Me.PART_RootBorder.Padding = New Thickness(
+                        If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                        If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                        Me.GlowSize,
+                        Me.GlowSize)
+
+                    Me.Opacity = 1
+
+                    Await Task.Delay(50)
+
+                    w.Close()
+                    CType(w.Content, Image).Source = Nothing
+                    _maximizeImage = Nothing
+                    w = Nothing
+                    GC.Collect()
+                End Sub
             Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, ta)
 
             Me.ActualWindowState = WindowState.Normal
-            Await Task.Delay(MAXIMIZE_SPEED + 50)
-
-            _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
-            _maximizeImage.Render(Me)
-
-            Dim w As Window = makeWindow()
-
-            w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
-            w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
-            w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
-            w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
-            w.Margin = New Thickness(
-                (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
-                (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
-                (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
-                (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
-            w.Content = New Image() With {
-                .Source = _maximizeImage,
-                .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
-                .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
-                .Margin = New Thickness(0, 0, 0, 0),
-                .VerticalAlignment = VerticalAlignment.Top,
-                .HorizontalAlignment = Windows.HorizontalAlignment.Left,
-                .UseLayoutRounding = True,
-                .SnapsToDevicePixels = True
-            }
-            w.WindowState = WindowState.Maximized
-
-            Dim effect As Effect = Me.PART_MainBorder.Effect
-            Me.PART_MainBorder.Effect = Nothing
-
-            w.Show()
-            Me.Opacity = 0
-
-            Await Task.Delay(50)
-
-            Me.Restore()
-
-            Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
-            Me.PART_RootBorder.Padding = New Thickness(
-                If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
-                If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
-                Me.GlowSize,
-                Me.GlowSize)
-            Me.PART_MainBorder.Effect = effect
-
-            Me.Opacity = 1
-
-            Await Task.Delay(50)
-
-            w.Close()
-            CType(w.Content, Image).Source = Nothing
-            _maximizeImage = Nothing
-            w = Nothing
-            GC.Collect()
         End Sub
 
         Private Async Sub doCloseAnimation()
