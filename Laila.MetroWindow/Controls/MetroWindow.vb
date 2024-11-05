@@ -106,6 +106,7 @@ Namespace Controls
         Private PART_TitleBar As ContentControl
         Private PART_RootBorder As Border
         Private PART_MainBorder As Border
+        Private PART_MainGrid As Grid
         Private PART_MenuPlaceHolder As Grid
         Private PART_Text As TextBlock
         Private PART_IconButton As Button
@@ -119,6 +120,7 @@ Namespace Controls
         Private _dontUpdatePosition As Boolean = True
         Private _isAnimating As Boolean
         Private _isReallyClosing As Boolean
+        Private _saveElement As UIElement
 
         Shared Sub New()
             DefaultStyleKeyProperty.OverrideMetadata(GetType(MetroWindow), New FrameworkPropertyMetadata(GetType(MetroWindow)))
@@ -138,10 +140,6 @@ Namespace Controls
 
             AddHandler Me.SizeChanged,
                 Sub(sender2 As Object, e2 As EventArgs)
-                    Application.Current.Dispatcher.Invoke(
-                        Sub()
-                        End Sub, Threading.DispatcherPriority.ContextIdle)
-
                     If Me.DoShowChrome Then
                         ' save size
                         If Me.WindowState = WindowState.Normal AndAlso Not _dontUpdatePosition Then
@@ -216,7 +214,6 @@ Namespace Controls
 
         Private Sub CenterTitle()
             If Me.DoIntegrateMenu AndAlso Not PART_MenuPlaceHolder Is Nothing AndAlso Not PART_Text Is Nothing AndAlso Me.DoShowChrome Then
-                Dim p As Point = PART_MenuPlaceHolder.TransformToAncestor(Me).Transform(New Point(PART_MenuPlaceHolder.ActualWidth, 0))
                 Dim leftCentered As Double = (PART_MainBorder.ActualWidth - PART_Text.ActualWidth) / 2
                 PART_Text.Margin = New Thickness(leftCentered, PART_Text.Margin.Top, PART_Text.Margin.Right, PART_Text.Margin.Bottom)
                 PART_Text.UpdateLayout()
@@ -419,6 +416,7 @@ Namespace Controls
             PART_MenuPlaceHolder = Me.Template.FindName("PART_MenuPlaceHolder", Me)
             PART_RootBorder = Me.Template.FindName("PART_RootBorder", Me)
             PART_MainBorder = Me.Template.FindName("PART_MainBorder", Me)
+            PART_MainGrid = Me.Template.FindName("PART_MainGrid", Me)
             PART_TitleBar = Me.Template.FindName("PART_TitleBar", Me)
             PART_Text = Me.Template.FindName("PART_Text", Me)
             PART_IconButton = Me.Template.FindName("PART_IconButton", Me)
@@ -716,6 +714,9 @@ Namespace Controls
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
 
+            _saveElement = Me.PART_MainBorder.Child
+            Me.PART_MainBorder.Child = Nothing
+
             _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             _maximizeImage.Render(Me)
 
@@ -771,19 +772,28 @@ Namespace Controls
             ta.EasingFunction = ease
             AddHandler ta.Completed,
                 Sub(s, e)
-                    Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
-                    Me.PART_RootBorder.Padding = New Thickness()
-                    _isAnimating = False
-                    Me.ActualWindowState = WindowState.Maximized
-                    _noPositionCorrection = False
+                    If _isAnimating Then
+                        _isAnimating = False
+                        Me.PART_MainBorder.Child = _saveElement
+                        Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
+                        Me.PART_RootBorder.Padding = New Thickness()
+                        Me.ActualWindowState = WindowState.Maximized
+                        _noPositionCorrection = False
+                    End If
                 End Sub
             Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, ta)
         End Sub
+
 
         Private Async Sub doRestoreAnimPt2()
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
+
+            _isAnimating = True
+
+            _saveElement = Me.PART_MainBorder.Child
+            Me.PART_MainBorder.Child = Nothing
 
             Dim targetPadding As Thickness = New Thickness(
                 If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0) + _position.Left,
@@ -796,68 +806,74 @@ Namespace Controls
             ta.EasingFunction = ease
             AddHandler ta.Completed,
                 Async Sub(s, e)
-                    Application.Current.Dispatcher.Invoke(
-                        Sub()
-                        End Sub, Threading.DispatcherPriority.ContextIdle)
+                    If _isAnimating Then
+                        Await Task.Delay(50)
 
-                    _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
-                    _maximizeImage.Render(Me)
+                        Application.Current.Dispatcher.Invoke(
+                            Sub()
+                            End Sub, Threading.DispatcherPriority.ContextIdle)
 
-                    Dim w As Window = makeWindow()
+                        _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
+                        _maximizeImage.Render(Me)
 
-                    w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
-                    w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
-                    w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
-                    w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
-                    w.Margin = New Thickness(
-                        (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
-                        (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
-                        (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
-                        (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
-                    w.Content = New Image() With {
-                        .Source = _maximizeImage,
-                        .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
-                        .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
-                        .Margin = New Thickness(0, 0, 0, 0),
-                        .VerticalAlignment = VerticalAlignment.Top,
-                        .HorizontalAlignment = Windows.HorizontalAlignment.Left,
-                        .UseLayoutRounding = True,
-                        .SnapsToDevicePixels = True
-                    }
-                    w.WindowState = WindowState.Maximized
+                        Dim w As Window = makeWindow()
 
-                    w.Show()
-                    Me.Opacity = 0
+                        w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
+                        w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
+                        w.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
+                        w.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
+                        w.Margin = New Thickness(
+                            (_s.WorkingArea.Left - _s.Bounds.Left) / (_dpi.PixelsPerInchX / 96.0),
+                            (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
+                            (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
+                            (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
+                        w.Content = New Image() With {
+                            .Source = _maximizeImage,
+                            .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
+                            .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
+                            .Margin = New Thickness(0, 0, 0, 0),
+                            .VerticalAlignment = VerticalAlignment.Top,
+                            .HorizontalAlignment = Windows.HorizontalAlignment.Left,
+                            .UseLayoutRounding = True,
+                            .SnapsToDevicePixels = True
+                        }
+                        w.WindowState = WindowState.Maximized
 
-                    Application.Current.Dispatcher.Invoke(
-                        Sub()
-                        End Sub, Threading.DispatcherPriority.ContextIdle)
+                        w.Show()
+                        Me.Opacity = 0
 
-                    Me.Restore()
+                        Application.Current.Dispatcher.Invoke(
+                            Sub()
+                            End Sub, Threading.DispatcherPriority.ContextIdle)
 
-                    Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
-                    Me.PART_RootBorder.Padding = New Thickness(
-                        If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
-                        If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
-                        Me.GlowSize,
-                        Me.GlowSize)
+                        Me.Restore()
 
-                    Application.Current.Dispatcher.Invoke(
-                        Sub()
-                        End Sub, Threading.DispatcherPriority.ContextIdle)
+                        Me.PART_MainBorder.Child = _saveElement
+                        Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
+                        Me.PART_RootBorder.Padding = New Thickness(
+                            If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                            If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                            Me.GlowSize,
+                            Me.GlowSize)
 
-                    Me.Opacity = 1
+                        Application.Current.Dispatcher.Invoke(
+                            Sub()
+                            End Sub, Threading.DispatcherPriority.ContextIdle)
 
-                    Application.Current.Dispatcher.Invoke(
-                        Sub()
-                        End Sub, Threading.DispatcherPriority.ContextIdle)
-                    Await Task.Delay(50)
+                        Me.Opacity = 1
+                        _isAnimating = False
 
-                    w.Close()
-                    CType(w.Content, Image).Source = Nothing
-                    _maximizeImage = Nothing
-                    w = Nothing
-                    GC.Collect()
+                        Application.Current.Dispatcher.Invoke(
+                            Sub()
+                            End Sub, Threading.DispatcherPriority.ContextIdle)
+                        Await Task.Delay(50)
+
+                        w.Close()
+                        CType(w.Content, Image).Source = Nothing
+                        _maximizeImage = Nothing
+                        w = Nothing
+                        GC.Collect()
+                    End If
                 End Sub
             Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, ta)
 
