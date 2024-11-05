@@ -84,7 +84,7 @@ Namespace Controls
         End Property
 
         Private Const MINIMIZE_SPEED As Integer = 250
-        Private Const MAXIMIZE_SPEED As Integer = 125
+        Private Const MAXIMIZE_SPEED As Integer = 200
         Private Const CLOSE_SPEED As Integer = 250
         Private Const WM_SYSCOMMAND As Integer = &H112
         Private Const SC_MINIMIZE As Integer = &HF020
@@ -138,6 +138,10 @@ Namespace Controls
             Dim b As Boolean
             AddHandler Me.SizeChanged,
                 Sub(sender2 As Object, e2 As EventArgs)
+                    Application.Current.Dispatcher.Invoke(
+                        Sub()
+                        End Sub, Threading.DispatcherPriority.ContextIdle)
+
                     If Me.DoShowChrome Then
                         ' save size
                         If Me.WindowState = WindowState.Normal AndAlso Not _dontUpdatePosition Then
@@ -759,6 +763,8 @@ Namespace Controls
             w = Nothing
             GC.Collect()
 
+            _noPositionCorrection = True
+
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
             Dim ta As ThicknessAnimation = New ThicknessAnimation(Me.PART_RootBorder.Padding, New Thickness(), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
@@ -769,6 +775,7 @@ Namespace Controls
                     Me.PART_RootBorder.Padding = New Thickness()
                     _isAnimating = False
                     Me.ActualWindowState = WindowState.Maximized
+                    _noPositionCorrection = False
                 End Sub
             Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, ta)
         End Sub
