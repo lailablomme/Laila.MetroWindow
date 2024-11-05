@@ -120,7 +120,7 @@ Namespace Controls
         Private _dontUpdatePosition As Boolean = True
         Private _isAnimating As Boolean
         Private _isReallyClosing As Boolean
-        Private _saveElement As UIElement
+        Private _renderingTier As Integer
 
         Shared Sub New()
             DefaultStyleKeyProperty.OverrideMetadata(GetType(MetroWindow), New FrameworkPropertyMetadata(GetType(MetroWindow)))
@@ -129,6 +129,8 @@ Namespace Controls
         Public Sub New()
             Me.DefaultStyleKey = GetType(MetroWindow)
             Me.Language = XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)
+
+            _renderingTier = RenderCapability.Tier >> 16
 
             AddHandler Me.Loaded,
                 Sub(sender As Object, e As EventArgs)
@@ -714,9 +716,6 @@ Namespace Controls
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
 
-            _saveElement = Me.PART_MainBorder.Child
-            Me.PART_MainBorder.Child = Nothing
-
             _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             _maximizeImage.Render(Me)
 
@@ -774,7 +773,6 @@ Namespace Controls
                 Sub(s, e)
                     If _isAnimating Then
                         _isAnimating = False
-                        Me.PART_MainBorder.Child = _saveElement
                         Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
                         Me.PART_RootBorder.Padding = New Thickness()
                         Me.ActualWindowState = WindowState.Maximized
@@ -791,9 +789,6 @@ Namespace Controls
             _dpi = VisualTreeHelper.GetDpi(Me)
 
             _isAnimating = True
-
-            _saveElement = Me.PART_MainBorder.Child
-            Me.PART_MainBorder.Child = Nothing
 
             Dim targetPadding As Thickness = New Thickness(
                 If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0) + _position.Left,
@@ -848,7 +843,6 @@ Namespace Controls
 
                         Me.Restore()
 
-                        Me.PART_MainBorder.Child = _saveElement
                         Me.PART_RootBorder.BeginAnimation(Border.PaddingProperty, Nothing)
                         Me.PART_RootBorder.Padding = New Thickness(
                             If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
@@ -974,7 +968,7 @@ Namespace Controls
                                     handled = True
                                     doRestoreAnimPt1(w, _wasMaximized, Nothing)
                                 End If
-                            ElseIf Me.WindowState = WindowState.Maximized Then
+                            ElseIf Me.WindowState = WindowState.Maximized AndAlso _renderingTier = 2 Then
                                 If Not _skipMaximize Then
                                     handled = True
                                     doRestoreAnimPt2()
@@ -984,31 +978,33 @@ Namespace Controls
                                 End If
                             End If
                         Case SC_MAXIMIZE
-                            If _isMinimized Then
-                                _isMinimized = False
+                            If _renderingTier = 2 Then
+                                If _isMinimized Then
+                                    _isMinimized = False
 
-                                Dim w As Window = makeWindow()
-
-                                handled = True
-                                doRestoreAnimPt1(w, _wasMaximized,
-                                    Sub()
-                                        If Not _wasMaximized Then
-                                            w = makeWindow()
-                                            doMaximizeAnimPt1(w)
-                                            doMaximizeAnimPt2(w, Me.Left, Me.Top, Me.Width, Me.Height)
-                                        End If
-                                        _skipMaximize = True
-                                        If _wasMaximized Then Me.Maximize()
-                                    End Sub)
-                            Else
-                                If Not _skipMaximize Then
-                                    handled = True
                                     Dim w As Window = makeWindow()
-                                    doMaximizeAnimPt1(w)
-                                    doMaximizeAnimPt2(w, Me.Left, Me.Top, Me.Width, Me.Height)
-                                    _skipMaximize = True
+
+                                    handled = True
+                                    doRestoreAnimPt1(w, _wasMaximized,
+                                        Sub()
+                                            If Not _wasMaximized Then
+                                                w = makeWindow()
+                                                doMaximizeAnimPt1(w)
+                                                doMaximizeAnimPt2(w, Me.Left, Me.Top, Me.Width, Me.Height)
+                                            End If
+                                            _skipMaximize = True
+                                            If _wasMaximized Then Me.Maximize()
+                                        End Sub)
                                 Else
-                                    _skipMaximize = False
+                                    If Not _skipMaximize Then
+                                        handled = True
+                                        Dim w As Window = makeWindow()
+                                        doMaximizeAnimPt1(w)
+                                        doMaximizeAnimPt2(w, Me.Left, Me.Top, Me.Width, Me.Height)
+                                        _skipMaximize = True
+                                    Else
+                                        _skipMaximize = False
+                                    End If
                                 End If
                             End If
                     End Select
