@@ -11,7 +11,6 @@
         <Setter Property="GlowSize" Value="15" />
         <Setter Property="GlowStyle" Value="Glowing" />
         <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
-        <Setter Property="RenderOptions.EdgeMode" Value="Aliased" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:MetroWindow}">
