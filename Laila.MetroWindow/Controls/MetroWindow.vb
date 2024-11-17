@@ -339,6 +339,7 @@ Namespace Controls
                     ' restore state, unless it was minimized
                     If _position.State <> WindowState.Minimized Then
                         Me.WindowState = _position.State
+                        Me.ActualWindowState = Me.WindowState
                     End If
                 End If
 
@@ -537,6 +538,13 @@ Namespace Controls
 
                 If Me.WindowState = WindowState.Maximized AndAlso Not _isAnimating Then
                     Me.PART_RootBorder.Padding = New Thickness()
+                ElseIf Me.WindowState = WindowState.Normal AndAlso Not _isAnimating Then
+                    Me.PART_RootBorder.Padding = New Thickness(
+                            If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                            If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                            Me.GlowSize,
+                            Me.GlowSize)
+                    Me.ActualWindowState = WindowState.Normal
                 End If
             End If
         End Sub
@@ -650,6 +658,7 @@ Namespace Controls
             CType(w.Content, Image).Source = Nothing
             _minimizeImage = Nothing
             w = Nothing
+            Me.ActualWindowState = Me.WindowState
             GC.Collect()
 
             If Not callback Is Nothing Then
@@ -928,10 +937,12 @@ Namespace Controls
                     CType(w.Content, Image).Source = Nothing
                     _closeImage = Nothing
                     w = Nothing
-                    GC.Collect()
 
                     _isReallyClosing = True
-                    Me.Close()
+                    Application.Current.Dispatcher.BeginInvoke(
+                        Sub()
+                            Me.Close()
+                        End Sub)
                 End Sub
             w.BeginAnimation(Window.OpacityProperty, da)
             CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
