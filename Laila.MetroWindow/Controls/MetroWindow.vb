@@ -939,10 +939,11 @@ Namespace Controls
                     w = Nothing
 
                     _isReallyClosing = True
-                    Application.Current.Dispatcher.BeginInvoke(
-                        Sub()
-                            Me.Close()
-                        End Sub)
+                    Try
+                        ' sometimes it throws, no good reason :(
+                        Me.Close()
+                    Catch ex As ArgumentException
+                    End Try
                 End Sub
             w.BeginAnimation(Window.OpacityProperty, da)
             CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
