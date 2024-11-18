@@ -939,11 +939,8 @@ Namespace Controls
                     w = Nothing
 
                     _isReallyClosing = True
-                    Try
-                        ' sometimes it throws, no good reason :(
-                        Me.Close()
-                    Catch ex As ArgumentException
-                    End Try
+                    ' sometimes it throws, no good reason :(
+                    Me.Close()
                 End Sub
             w.BeginAnimation(Window.OpacityProperty, da)
             CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
