@@ -481,10 +481,8 @@ Namespace Controls
                         Sub()
                             If Me.WindowState = WindowState.Maximized Then
                                 Me.Restore()
-                                PART_MaximizeRestoreButton.Content = "1"
                             Else
                                 Me.Maximize()
-                                PART_MaximizeRestoreButton.Content = "2"
                             End If
                         End Sub
                     AddHandler PART_MaximizeRestoreButton.MouseUp, AddressOf onShowSystemMenu

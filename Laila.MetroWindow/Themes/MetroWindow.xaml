@@ -128,11 +128,11 @@
 
                                         <StackPanel Grid.Column="5" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
                                             <Button Style="{DynamicResource metroWindowButtonStyle}" 
-                                                x:Name="PART_MinimizeButton">0</Button>
+                                                        x:Name="PART_MinimizeButton">&#xE949;</Button>
                                             <Button Style="{DynamicResource metroWindowButtonStyle}" 
-                                                x:Name="PART_MaximizeRestoreButton">1</Button>
+                                                        x:Name="PART_MaximizeRestoreButton">&#xE739;</Button>
                                             <Button Style="{DynamicResource metroWindowCloseButtonStyle}" 
-                                                x:Name="PART_CloseButton">r</Button>
+                                                        x:Name="PART_CloseButton">&#xE106;</Button>
                                         </StackPanel>
                                     </Grid>
                                 </ContentControl>
@@ -168,8 +168,9 @@
                             <Setter Property="Effect" TargetName="PART_MainBorder" Value="{x:Null}" />
                             <Setter Property="Padding" TargetName="PART_RootBorder" Value="0" />
                         </Trigger>
-                        <Trigger Property="WindowState" Value="Maximized">
+                        <Trigger Property="ActualWindowState" Value="Maximized">
                             <Setter Property="Visibility" TargetName="PART_SizeGrip" Value="Collapsed" />
+                            <Setter Property="Content" TargetName="PART_MaximizeRestoreButton" Value="&#xE923;" />
                         </Trigger>
                         <DataTrigger Binding="{Binding ResizeMode, RelativeSource={RelativeSource Mode=Self}}" Value="NoResize">
                             <Setter Property="Visibility" TargetName="PART_MinimizeButton" Value="Collapsed" />
