@@ -165,148 +165,150 @@
                         <converters:BorderSizeConverter x:Key="borderSizeConverter" />
                     </ControlTemplate.Resources>
                     <Border x:Name="PART_RootBorder" Padding="{Binding Path=GlowSize, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource glowMarginConverter}}">
-                        <Border Grid.Row="1" Grid.Column="1" x:Name="PART_MainBorder" 
+                        <Border Grid.Row="1" Grid.Column="1" x:Name="PART_GlowBorder">
+                            <Border x:Name="PART_MainBorder" 
                                 Background="{TemplateBinding Background}" CornerRadius="10" 
                                 BorderBrush="{DynamicResource metroWindowBorderBrush}" BorderThickness="1">
-                            <Grid x:Name="PART_MainGrid">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
+                                <Grid x:Name="PART_MainGrid">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
 
-                                <ContentControl x:Name="PART_TitleBar" HorizontalAlignment="Stretch" Background="Transparent">
-                                    <Grid Grid.Row="0" x:Name="PART_TitleBarGrid" VerticalAlignment="Center" Background="Transparent" Height="24" Margin="0,4,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
+                                    <ContentControl x:Name="PART_TitleBar" HorizontalAlignment="Stretch" Background="Transparent">
+                                        <Grid Grid.Row="0" x:Name="PART_TitleBarGrid" VerticalAlignment="Center" Background="Transparent" Height="24" Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
 
-                                        <Button Style="{DynamicResource metroWindowIconButtonStyle}" 
+                                            <Button Style="{DynamicResource metroWindowIconButtonStyle}" 
                                                 x:Name="PART_IconButton" WindowChrome.IsHitTestVisibleInChrome="True">0</Button>
 
-                                        <ItemsControl Grid.Column="1" ItemsSource="{TemplateBinding LeftButtons}" x:Name="itemsControlLeftButtons">
-                                            <ItemsControl.Style>
-                                                <Style>
-                                                    <Setter Property="ItemsControl.Margin" Value="0,0,3,0" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding ActualWidth, ElementName=itemsControlLeftButtons}" Value="0">
-                                                            <Setter Property="ItemsControl.Margin" Value="0" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </ItemsControl.Style>
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid>
-                                                        <Grid.Style>
-                                                            <Style>
-                                                                <Setter Property="Grid.Visibility" Value="Visible" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsVisible}" Value="False">
-                                                                        <Setter Property="Grid.Visibility" Value="Collapsed" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Grid.Style>
-                                                        <Button IsEnabled="{Binding IsEnabled}" 
+                                            <ItemsControl Grid.Column="1" ItemsSource="{TemplateBinding LeftButtons}" x:Name="itemsControlLeftButtons">
+                                                <ItemsControl.Style>
+                                                    <Style>
+                                                        <Setter Property="ItemsControl.Margin" Value="0,0,3,0" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ActualWidth, ElementName=itemsControlLeftButtons}" Value="0">
+                                                                <Setter Property="ItemsControl.Margin" Value="0" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ItemsControl.Style>
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid>
+                                                            <Grid.Style>
+                                                                <Style>
+                                                                    <Setter Property="Grid.Visibility" Value="Visible" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                                                            <Setter Property="Grid.Visibility" Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Grid.Style>
+                                                            <Button IsEnabled="{Binding IsEnabled}" 
                                                                 Style="{DynamicResource metroWindowButtonStyle}" 
                                                                 Command="{Binding ActionCommand}" Margin="0,0,0,0"
                                                                 WindowChrome.IsHitTestVisibleInChrome="True">
-                                                            <Image Source="{Binding InternalImage}" Width="16" Height="16">
-                                                                <Image.Style>
-                                                                    <Style>
-                                                                        <Setter Property="Image.Opacity" Value="1" />
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsEnabled}" Value="False">
-                                                                                <Setter Property="Image.Opacity" Value="0.5" />
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </Image.Style>
-                                                            </Image>
-                                                        </Button>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                                                <Image Source="{Binding InternalImage}" Width="16" Height="16">
+                                                                    <Image.Style>
+                                                                        <Style>
+                                                                            <Setter Property="Image.Opacity" Value="1" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                                                                    <Setter Property="Image.Opacity" Value="0.5" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Image.Style>
+                                                                </Image>
+                                                            </Button>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                        <Grid Grid.Column="2" HorizontalAlignment="Left" x:Name="PART_MenuPlaceHolder" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True"/>
+                                            <Grid Grid.Column="2" HorizontalAlignment="Left" x:Name="PART_MenuPlaceHolder" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True"/>
 
-                                        <Border CornerRadius="5" BorderThickness="1" x:Name="PART_TitleBarGrip" BorderBrush="{DynamicResource metroWindowTitleBarBorderBrush}" 
+                                            <Border CornerRadius="5" BorderThickness="1" x:Name="PART_TitleBarGrip" BorderBrush="{DynamicResource metroWindowTitleBarBorderBrush}" 
                                                     Grid.Column="3" IsHitTestVisible="False" Margin="0,0,-4,0" Background="{DynamicResource metroWindowTitleBarBrush}" />
 
-                                        <TextBlock Grid.ColumnSpan="5" Style="{DynamicResource metroWindowTitleTextStyle}" x:Name="PART_Text" Margin="5,0,0,0" Height="24"
+                                            <TextBlock Grid.ColumnSpan="5" Style="{DynamicResource metroWindowTitleTextStyle}" x:Name="PART_Text" Margin="5,0,0,0" Height="24"
                                                 Text="{Binding Title, RelativeSource={RelativeSource Mode=TemplatedParent}}" HorizontalAlignment="Left"
                                                 IsHitTestVisible="False" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
 
-                                        <ItemsControl Grid.Column="4" ItemsSource="{TemplateBinding RightButtons}" Margin="7,0,0,0">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid>
-                                                        <Grid.Style>
-                                                            <Style>
-                                                                <Setter Property="Grid.Visibility" Value="Visible" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsVisible}" Value="False">
-                                                                        <Setter Property="Grid.Visibility" Value="Collapsed" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Grid.Style>
-                                                        <Button IsEnabled="{Binding IsEnabled}" Margin="0,0,0,0" 
+                                            <ItemsControl Grid.Column="4" ItemsSource="{TemplateBinding RightButtons}" Margin="7,0,0,0">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid>
+                                                            <Grid.Style>
+                                                                <Style>
+                                                                    <Setter Property="Grid.Visibility" Value="Visible" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                                                            <Setter Property="Grid.Visibility" Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Grid.Style>
+                                                            <Button IsEnabled="{Binding IsEnabled}" Margin="0,0,0,0" 
                                                             Style="{DynamicResource metroWindowButtonStyle}" 
                                                             Command="{Binding ActionCommand}"
                                                             WindowChrome.IsHitTestVisibleInChrome="True">
-                                                            <Image Source="{Binding InternalImage}" Width="16" Height="16">
-                                                                <Image.Style>
-                                                                    <Style>
-                                                                        <Setter Property="Image.Opacity" Value="1" />
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsEnabled}" Value="False">
-                                                                                <Setter Property="Image.Opacity" Value="0.5" />
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </Image.Style>
-                                                            </Image>
-                                                        </Button>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                                                <Image Source="{Binding InternalImage}" Width="16" Height="16">
+                                                                    <Image.Style>
+                                                                        <Style>
+                                                                            <Setter Property="Image.Opacity" Value="1" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                                                                    <Setter Property="Image.Opacity" Value="0.5" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Image.Style>
+                                                                </Image>
+                                                            </Button>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                        <StackPanel Grid.Column="5" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True" Margin="0,0,4,0">
-                                            <Button Style="{DynamicResource metroWindowButtonStyle}" 
+                                            <StackPanel Grid.Column="5" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True" Margin="0,0,4,0">
+                                                <Button Style="{DynamicResource metroWindowButtonStyle}" 
                                                         x:Name="PART_MinimizeButton">&#xE949;</Button>
-                                            <Button Style="{DynamicResource metroWindowButtonStyle}" 
+                                                <Button Style="{DynamicResource metroWindowButtonStyle}" 
                                                         x:Name="PART_MaximizeRestoreButton">&#xE739;</Button>
-                                            <Button Style="{DynamicResource metroWindowCloseButtonStyle}" 
+                                                <Button Style="{DynamicResource metroWindowCloseButtonStyle}" 
                                                         x:Name="PART_CloseButton">&#xE106;</Button>
-                                        </StackPanel>
-                                    </Grid>
-                                </ContentControl>
+                                            </StackPanel>
+                                        </Grid>
+                                    </ContentControl>
 
-                                <ContentPresenter Grid.Row="1" Margin="1,0,1,1"
+                                    <ContentPresenter Grid.Row="1" Margin="1,0,1,1"
                                           Content="{Binding Content, RelativeSource={RelativeSource Mode=TemplatedParent}}" />
 
-                                <Image Grid.Row="1" x:Name="PART_SizeGrip" Visibility="Collapsed" IsHitTestVisible="False"
+                                    <Image Grid.Row="1" x:Name="PART_SizeGrip" Visibility="Collapsed" IsHitTestVisible="False"
                                     Source="pack://application:,,,/Laila.MetroWindow;component/Images/ResizeGrip.png" 
                                        Opacity="0.75" Margin="3" Width="10" Height="10" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
-                            </Grid>
+                                </Grid>
+                            </Border>
                         </Border>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -314,7 +316,7 @@
                             <Setter Property="Visibility" TargetName="PART_SizeGrip" Value="Visible" />
                         </Trigger>
                         <Trigger Property="GlowStyle" Value="Glowing">
-                            <Setter Property="Effect" TargetName="PART_MainBorder">
+                            <Setter Property="Effect" TargetName="PART_GlowBorder">
                                 <Setter.Value>
                                     <DropShadowEffect BlurRadius="{Binding Path=GlowSize, RelativeSource={RelativeSource TemplatedParent}}" ShadowDepth="0" Color="{Binding Path=GlowColor, RelativeSource={RelativeSource TemplatedParent}}" />
                                 </Setter.Value>
@@ -322,14 +324,14 @@
                         </Trigger>
                         <Trigger Property="GlowStyle" Value="Shadow">
                             <Setter Property="Padding" TargetName="PART_RootBorder" Value="{Binding Path=GlowSize, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource shadowMarginConverter}}" />
-                            <Setter Property="Effect" TargetName="PART_MainBorder">
+                            <Setter Property="Effect" TargetName="PART_GlowBorder">
                                 <Setter.Value>
                                     <DropShadowEffect Opacity="0.5" BlurRadius="{Binding Path=GlowSize, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource borderSizeConverter}}" ShadowDepth="{TemplateBinding GlowSize}" Color="{Binding Path=GlowColor, RelativeSource={RelativeSource TemplatedParent}}" />
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
                         <Trigger Property="GlowStyle" Value="None">
-                            <Setter Property="Effect" TargetName="PART_MainBorder" Value="{x:Null}" />
+                            <Setter Property="Effect" TargetName="PART_GlowBorder" Value="{x:Null}" />
                             <Setter Property="Padding" TargetName="PART_RootBorder" Value="0" />
                         </Trigger>
                         <Trigger Property="ActualWindowState" Value="Maximized">
