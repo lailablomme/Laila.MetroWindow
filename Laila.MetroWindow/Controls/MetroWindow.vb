@@ -731,6 +731,8 @@ Namespace Controls
         End Sub
 
         Private Async Sub doMaximizeAnimation(w As Window, left As Double, top As Double, width As Double, height As Double)
+            _isAnimating = True
+
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
@@ -871,6 +873,8 @@ Namespace Controls
 
 
         Private Async Sub doRestoreFromMaximizedAnimation()
+            _isAnimating = True
+
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
