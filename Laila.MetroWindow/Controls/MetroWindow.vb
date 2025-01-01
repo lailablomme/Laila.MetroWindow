@@ -804,8 +804,8 @@ Namespace Controls
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Background = Me.Background,
-                .Width = Double.NaN,
-                .Height = Double.NaN,
+                .Width = 10000,
+                .Height = 10000,
                 .Opacity = 0.85,
                 .CornerRadius = Me.PART_MainBorder.CornerRadius
             })
