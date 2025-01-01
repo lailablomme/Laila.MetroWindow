@@ -5,6 +5,7 @@ Imports System.Globalization
 Imports System.Threading
 Imports System.Windows
 Imports System.Windows.Controls
+Imports System.Windows.Data
 Imports System.Windows.Input
 Imports System.Windows.Interop
 Imports System.Windows.Markup
@@ -745,7 +746,7 @@ Namespace Controls
                 (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
             w.Content = New Grid()
             CType(w.Content, Grid).Children.Add(New Image() With {
-                .Margin = New Thickness(Me.Left, Me.Top, 0, 0),
+                .Margin = New Thickness(Me.Left, Me.Top, w.Width - Me.Left - Me.Width, w.Height - Me.Top - Me.Height),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Stretch = Stretch.Fill
@@ -755,8 +756,8 @@ Namespace Controls
             _maximizeImage.Render(Me)
 
             CType(CType(w.Content, Grid).Children(0), Image).Source = _maximizeImage
-            CType(CType(w.Content, Grid).Children(0), Image).Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX
-            CType(CType(w.Content, Grid).Children(0), Image).Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY
+            CType(CType(w.Content, Grid).Children(0), Image).Width = Double.NaN
+            CType(CType(w.Content, Grid).Children(0), Image).Height = Double.NaN
 
             w.Show()
 
@@ -787,25 +788,33 @@ Namespace Controls
             Me.Maximize()
 
             CType(w.Content, Grid).Children.Insert(0, New Image() With {
-                .Margin = New Thickness(Me.Left, Me.Top, 0, 0),
+                .Margin = New Thickness(Me.Left, Me.Top, w.Width - Me.Left - Me.Width, w.Height - Me.Top - Me.Height),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Source = maximizedImage,
-                .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
-                .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
+                .Width = Double.NaN,
+                .Height = Double.NaN,
                 .Opacity = 0,
                 .Stretch = Stretch.Fill
             })
             CType(w.Content, Grid).Children.Insert(0, New Border() With {
-                .Margin = New Thickness(Me.Left, Me.Top, 0, 0),
+                .Margin = New Thickness(Me.Left, Me.Top, w.Width - Me.Left - Me.Width, w.Height - Me.Top - Me.Height),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Background = Me.Background,
-                .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
-                .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
+                .Width = Double.NaN,
+                .Height = Double.NaN,
                 .Opacity = 0.85,
                 .CornerRadius = Me.PART_MainBorder.CornerRadius
             })
+            'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.WidthProperty, New Binding() With {
+            '    .Path = New PropertyPath("Width"),
+            '    .Source = CType(CType(w.Content, Grid).Children(1), Image)
+            '})
+            'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.HeightProperty, New Binding() With {
+            '    .Path = New PropertyPath("Height"),
+            '    .Source = CType(CType(w.Content, Grid).Children(1), Image)
+            '})
 
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
@@ -820,18 +829,18 @@ Namespace Controls
             da.EasingFunction = ease
             Dim da2 As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             da2.EasingFunction = ease
-            Dim da3 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da3.EasingFunction = ease
-            Dim da4 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da4.EasingFunction = ease
-            Dim da5 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX + prevPadding.Left + prevPadding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da5.EasingFunction = ease
-            Dim da6 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY + prevPadding.Top + prevPadding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da6.EasingFunction = ease
-            Dim da7 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da7.EasingFunction = ease
-            Dim da8 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da8.EasingFunction = ease
+            'Dim da3 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da3.EasingFunction = ease
+            'Dim da4 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da4.EasingFunction = ease
+            'Dim da5 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX + prevPadding.Left + prevPadding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da5.EasingFunction = ease
+            'Dim da6 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY + prevPadding.Top + prevPadding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da6.EasingFunction = ease
+            'Dim da7 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da7.EasingFunction = ease
+            'Dim da8 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da8.EasingFunction = ease
             AddHandler ta.Completed,
                 Sub(s, e)
                     If _isAnimating Then
@@ -849,14 +858,15 @@ Namespace Controls
                 End Sub
             CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.MarginProperty, ta)
             CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.MarginProperty, ta2)
+            CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Image.MarginProperty, ta0)
             CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.OpacityProperty, da)
             CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.OpacityProperty, da2)
-            CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.WidthProperty, da3)
-            CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.HeightProperty, da4)
-            CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.WidthProperty, da5)
-            CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.HeightProperty, da6)
-            CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.WidthProperty, da7)
-            CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.HeightProperty, da8)
+            'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.WidthProperty, da3)
+            'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.HeightProperty, da4)
+            'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.WidthProperty, da5)
+            'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.HeightProperty, da6)
+            'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.WidthProperty, da7)
+            'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.HeightProperty, da8)
         End Sub
 
 
@@ -887,8 +897,8 @@ Namespace Controls
             _maximizeImage.Render(Me.PART_MainBorder)
 
             CType(CType(w.Content, Grid).Children(0), Image).Source = _maximizeImage
-            CType(CType(w.Content, Grid).Children(0), Image).Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX
-            CType(CType(w.Content, Grid).Children(0), Image).Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY
+            CType(CType(w.Content, Grid).Children(0), Image).Width = Double.NaN
+            CType(CType(w.Content, Grid).Children(0), Image).Height = Double.NaN
 
             w.Show()
 
@@ -914,8 +924,8 @@ Namespace Controls
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Source = normalImage,
-                .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
-                .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
+                .Width = Double.NaN,
+                .Height = Double.NaN,
                 .Opacity = 0,
                 .Stretch = Stretch.Fill
             })
@@ -924,39 +934,51 @@ Namespace Controls
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Background = Me.Background,
-                .Width = _maximizeImage.PixelWidth / _dpi.DpiScaleX,
-                .Height = _maximizeImage.PixelHeight / _dpi.DpiScaleY,
+                .Width = Double.NaN,
+                .Height = Double.NaN,
                 .Opacity = 0.85,
                 .CornerRadius = Me.PART_MainBorder.CornerRadius
             })
+            'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.WidthProperty, New Binding() With {
+            '    .Path = New PropertyPath("Width"),
+            '    .Source = CType(CType(w.Content, Grid).Children(2), Image)
+            '})
+            'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.HeightProperty, New Binding() With {
+            '    .Path = New PropertyPath("Height"),
+            '    .Source = CType(CType(w.Content, Grid).Children(2), Image)
+            '})
 
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
             Dim ta0 As ThicknessAnimation = New ThicknessAnimation(
-                New Thickness(Me.Left + Me.PART_RootBorder.Padding.Left, Me.Top + Me.PART_RootBorder.Padding.Top, 0, 0), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                New Thickness(Me.Left + Me.PART_RootBorder.Padding.Left, Me.Top + Me.PART_RootBorder.Padding.Top,
+                               w.Width - Me.Left - Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right,
+                               w.Height - Me.Top - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             Dim ta As ThicknessAnimation = New ThicknessAnimation(
-                New Thickness(Me.Left + Me.PART_RootBorder.Padding.Left, Me.Top + Me.PART_RootBorder.Padding.Top, 0, 0), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                New Thickness(Me.Left + Me.PART_RootBorder.Padding.Left, Me.Top + Me.PART_RootBorder.Padding.Top,
+                               w.Width - Me.Left - Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right,
+                               w.Height - Me.Top - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             Dim ta2 As ThicknessAnimation = New ThicknessAnimation(
-                New Thickness(Me.Left, Me.Top, 0, 0), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                New Thickness(Me.Left, Me.Top, w.Width - Me.Left - Me.Width, w.Height - Me.Top - Me.Height), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             ta2.EasingFunction = ease
             Dim da As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             da.EasingFunction = ease
             Dim da2 As DoubleAnimation = New DoubleAnimation(0, 1, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             da2.EasingFunction = ease
-            Dim da3 As DoubleAnimation = New DoubleAnimation(Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da3.EasingFunction = ease
-            Dim da4 As DoubleAnimation = New DoubleAnimation(Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da4.EasingFunction = ease
-            Dim da5 As DoubleAnimation = New DoubleAnimation(Me.Width, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da5.EasingFunction = ease
-            Dim da6 As DoubleAnimation = New DoubleAnimation(Me.Height, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da6.EasingFunction = ease
+            'Dim da3 As DoubleAnimation = New DoubleAnimation(Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da3.EasingFunction = ease
+            'Dim da4 As DoubleAnimation = New DoubleAnimation(Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da4.EasingFunction = ease
+            'Dim da5 As DoubleAnimation = New DoubleAnimation(Me.Width, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da5.EasingFunction = ease
+            'Dim da6 As DoubleAnimation = New DoubleAnimation(Me.Height, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da6.EasingFunction = ease
             'Dim da7 As DoubleAnimation = New DoubleAnimation(1, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             'da7.EasingFunction = ease
-            Dim da8 As DoubleAnimation = New DoubleAnimation(Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da8.EasingFunction = ease
-            Dim da9 As DoubleAnimation = New DoubleAnimation(Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            da9.EasingFunction = ease
+            'Dim da8 As DoubleAnimation = New DoubleAnimation(Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da8.EasingFunction = ease
+            'Dim da9 As DoubleAnimation = New DoubleAnimation(Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+            'da9.EasingFunction = ease
             AddHandler ta.Completed,
                 Sub(s, e)
                     If _isAnimating Then
@@ -975,12 +997,13 @@ Namespace Controls
                 End Sub
             CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.MarginProperty, ta2)
             CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.MarginProperty, ta)
-            CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.WidthProperty, da5)
-            CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.HeightProperty, da6)
-            CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.WidthProperty, da3)
-            CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.HeightProperty, da4)
-            CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.WidthProperty, da8)
-            CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.HeightProperty, da9)
+            CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Image.MarginProperty, ta0)
+            'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.WidthProperty, da5)
+            'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.HeightProperty, da6)
+            'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.WidthProperty, da3)
+            'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.HeightProperty, da4)
+            'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.WidthProperty, da8)
+            'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.HeightProperty, da9)
             CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.OpacityProperty, da)
             CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.OpacityProperty, da2)
             'Me.BeginAnimation(Window.OpacityProperty, da7)
