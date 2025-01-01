@@ -806,8 +806,7 @@ Namespace Controls
                 .Background = Me.Background,
                 .Width = 10000,
                 .Height = 10000,
-                .Opacity = 0.85,
-                .CornerRadius = Me.PART_MainBorder.CornerRadius
+                .Opacity = 0.85
             })
             'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.WidthProperty, New Binding() With {
             '    .Path = New PropertyPath("Width"),
