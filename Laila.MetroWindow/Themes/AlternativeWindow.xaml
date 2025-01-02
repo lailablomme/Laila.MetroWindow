@@ -189,7 +189,7 @@
                                             <Button Style="{DynamicResource metroWindowIconButtonStyle}" 
                                                 x:Name="PART_IconButton" WindowChrome.IsHitTestVisibleInChrome="True">0</Button>
 
-                                            <ItemsControl Grid.Column="1" ItemsSource="{TemplateBinding LeftButtons}" x:Name="PART_LeftButtons">
+                                            <ItemsControl Grid.Column="1" ItemsSource="{TemplateBinding LeftButtons}" x:Name="PART_LeftButtons" Margin="4,0,3,0">
                                                 <ItemsControl.Style>
                                                     <Style>
                                                         <Setter Property="ItemsControl.Margin" Value="0,0,3,0" />
@@ -240,17 +240,17 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
 
-                                            <Grid Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,5,0"
+                                            <Grid Grid.Column="2" HorizontalAlignment="Left" Margin="-3,0,8,0"
                                                   x:Name="PART_MenuPlaceHolder" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True"/>
 
                                             <Border CornerRadius="5" BorderThickness="1" x:Name="PART_TitleBarGrip" BorderBrush="{DynamicResource metroWindowTitleBarBorderBrush}" 
-                                                    Grid.Column="3" IsHitTestVisible="False" Margin="0,0,-4,0" Background="{DynamicResource metroWindowTitleBarBrush}" />
+                                                    Grid.Column="3" IsHitTestVisible="False" Margin="-4,0,-4,0" Background="{DynamicResource metroWindowTitleBarBrush}" />
 
                                             <TextBlock Grid.ColumnSpan="5" Style="{DynamicResource metroWindowTitleTextStyle}" x:Name="PART_Text" Height="24"
                                                 Text="{Binding Title, RelativeSource={RelativeSource Mode=TemplatedParent}}" HorizontalAlignment="Left"
                                                 IsHitTestVisible="False" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
 
-                                            <ItemsControl Grid.Column="4" ItemsSource="{TemplateBinding RightButtons}" Margin="12,0,0,0" x:Name="PART_RightButtons">
+                                            <ItemsControl Grid.Column="4" ItemsSource="{TemplateBinding RightButtons}" Margin="7,0,0,0" x:Name="PART_RightButtons">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <StackPanel Orientation="Horizontal" />

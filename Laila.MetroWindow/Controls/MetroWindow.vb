@@ -228,7 +228,7 @@ Namespace Controls
                 Dim minLeft As Double = 4
                 If Not Me.PART_IconButton Is Nothing Then minLeft += Me.PART_IconButton.ActualWidth + Me.PART_IconButton.Margin.Left + Me.PART_IconButton.Margin.Right
                 If Not Me.PART_LeftButtons Is Nothing Then minLeft += Me.PART_LeftButtons.ActualWidth + Me.PART_LeftButtons.Margin.Left + Me.PART_LeftButtons.Margin.Right
-                If Not Me.PART_MenuPlaceHolder Is Nothing Then minLeft += Me.PART_MenuPlaceHolder.ActualWidth + Me.PART_MenuPlaceHolder.Margin.Left + Me.PART_MenuPlaceHolder.Margin.Right
+                If Not Me.PART_MenuPlaceHolder Is Nothing AndAlso Me.DoIntegrateMenu Then minLeft += Me.PART_MenuPlaceHolder.ActualWidth + Me.PART_MenuPlaceHolder.Margin.Left + Me.PART_MenuPlaceHolder.Margin.Right
                 Dim minRight As Double = 4
                 If Not Me.PART_MinimizeButton Is Nothing Then minRight += Me.PART_MinimizeButton.ActualWidth + Me.PART_MinimizeButton.Margin.Left + Me.PART_MinimizeButton.Margin.Right
                 If Not Me.PART_MaximizeRestoreButton Is Nothing Then minRight += Me.PART_MaximizeRestoreButton.ActualWidth + Me.PART_MaximizeRestoreButton.Margin.Left + Me.PART_MaximizeRestoreButton.Margin.Right
@@ -476,6 +476,20 @@ Namespace Controls
                         End Sub
                 End If
 
+                If Not Me.PART_LeftButtons Is Nothing Then
+                    AddHandler Me.PART_LeftButtons.SizeChanged,
+                        Sub()
+                            Me.CenterTitle()
+                        End Sub
+                End If
+
+                If Not Me.PART_RightButtons Is Nothing Then
+                    AddHandler Me.PART_RightButtons.SizeChanged,
+                        Sub()
+                            Me.CenterTitle()
+                        End Sub
+                End If
+
                 If Not PART_TitleBar Is Nothing Then
                     PART_TitleBar.Focus()
                     Keyboard.ClearFocus()
@@ -531,6 +545,7 @@ Namespace Controls
             End If
 
             setMargin()
+            Me.CenterTitle()
         End Sub
 
         Private Sub onShowSystemMenu(sender As Object, e As MouseButtonEventArgs)
