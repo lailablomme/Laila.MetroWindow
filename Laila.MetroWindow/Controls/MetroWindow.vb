@@ -749,7 +749,10 @@ Namespace Controls
                 (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
             w.Content = New Grid()
             CType(w.Content, Grid).Children.Add(New Image() With {
-                .Margin = New Thickness(Me.Left, Me.Top, w.Width - Me.Left - Me.Width, w.Height - Me.Top - Me.Height),
+                .Margin = New Thickness(Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0),
+                                        Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0),
+                                        w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width,
+                                        w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Stretch = Stretch.Fill
@@ -795,7 +798,10 @@ Namespace Controls
             Me.Maximize()
 
             CType(w.Content, Grid).Children.Insert(0, New Image() With {
-                .Margin = New Thickness(Me.Left, Me.Top, w.Width - Me.Left - Me.Width, w.Height - Me.Top - Me.Height),
+                .Margin = New Thickness(Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0),
+                                        Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0),
+                                        w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width,
+                                        w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Source = maximizedImage,
@@ -805,7 +811,10 @@ Namespace Controls
                 .Stretch = Stretch.Fill
             })
             CType(w.Content, Grid).Children.Insert(0, New Border() With {
-                .Margin = New Thickness(Me.Left, Me.Top, w.Width - Me.Left - Me.Width, w.Height - Me.Top - Me.Height),
+                .Margin = New Thickness(Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0),
+                                        Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0),
+                                        w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width,
+                                        w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Background = Me.Background,
@@ -955,7 +964,7 @@ Namespace Controls
                 .Stretch = Stretch.Fill
             })
             CType(w.Content, Grid).Children.Insert(0, New Border() With {
-                .Margin = New Thickness(Me.Left, Me.Top, 0, 0),
+                .Margin = New Thickness(),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Background = Me.Background,
@@ -976,15 +985,20 @@ Namespace Controls
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
             Dim ta0 As ThicknessAnimation = New ThicknessAnimation(
-                New Thickness(Me.Left + Me.PART_RootBorder.Padding.Left, Me.Top + Me.PART_RootBorder.Padding.Top,
-                               w.Width - Me.Left - Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right,
-                               w.Height - Me.Top - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                New Thickness((Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) + Me.PART_RootBorder.Padding.Left,
+                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) + Me.PART_RootBorder.Padding.Top,
+                               w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right,
+                               w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             Dim ta As ThicknessAnimation = New ThicknessAnimation(
-                New Thickness(Me.Left + Me.PART_RootBorder.Padding.Left, Me.Top + Me.PART_RootBorder.Padding.Top,
-                               w.Width - Me.Left - Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right,
-                               w.Height - Me.Top - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                New Thickness((Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) + Me.PART_RootBorder.Padding.Left,
+                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) + Me.PART_RootBorder.Padding.Top,
+                               w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right,
+                               w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             Dim ta2 As ThicknessAnimation = New ThicknessAnimation(
-                New Thickness(Me.Left, Me.Top, w.Width - Me.Left - Me.Width, w.Height - Me.Top - Me.Height), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                New Thickness((Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)),
+                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)),
+                              w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width,
+                              w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             ta2.EasingFunction = ease
             Dim da As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             da.EasingFunction = ease
