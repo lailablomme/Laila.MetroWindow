@@ -116,6 +116,8 @@ Namespace Controls
         Private PART_MinimizeButton As Button
         Private PART_MaximizeRestoreButton As Button
         Private PART_CloseButton As Button
+        Private PART_RightButtons As ItemsControl
+        Private PART_LeftButtons As ItemsControl
         Private _isMenuIntegrated As Boolean = False
         Private _position As WindowPositionData = Nothing
         Private _previousPosition As WindowPositionData = New WindowPositionData()
@@ -219,10 +221,30 @@ Namespace Controls
 
         Private Sub CenterTitle()
             If Me.DoIntegrateMenu AndAlso Not PART_MenuPlaceHolder Is Nothing AndAlso Not PART_Text Is Nothing AndAlso Me.DoShowChrome Then
-                Dim leftCentered As Double = (PART_MainBorder.ActualWidth - PART_Text.ActualWidth) / 2
+                Me.PART_Text.BeginInit()
+                PART_Text.MaxWidth = Double.PositiveInfinity
+                Me.PART_Text.Margin = New Thickness()
+                Me.PART_Text.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
+                Dim minLeft As Double = 4
+                If Not Me.PART_IconButton Is Nothing Then minLeft += Me.PART_IconButton.ActualWidth + Me.PART_IconButton.Margin.Left + Me.PART_IconButton.Margin.Right
+                If Not Me.PART_LeftButtons Is Nothing Then minLeft += Me.PART_LeftButtons.ActualWidth + Me.PART_LeftButtons.Margin.Left + Me.PART_LeftButtons.Margin.Right
+                If Not Me.PART_MenuPlaceHolder Is Nothing Then minLeft += Me.PART_MenuPlaceHolder.ActualWidth + Me.PART_MenuPlaceHolder.Margin.Left + Me.PART_MenuPlaceHolder.Margin.Right
+                Dim minRight As Double = 4
+                If Not Me.PART_MinimizeButton Is Nothing Then minRight += Me.PART_MinimizeButton.ActualWidth + Me.PART_MinimizeButton.Margin.Left + Me.PART_MinimizeButton.Margin.Right
+                If Not Me.PART_MaximizeRestoreButton Is Nothing Then minRight += Me.PART_MaximizeRestoreButton.ActualWidth + Me.PART_MaximizeRestoreButton.Margin.Left + Me.PART_MaximizeRestoreButton.Margin.Right
+                If Not Me.PART_CloseButton Is Nothing Then minRight += Me.PART_CloseButton.ActualWidth + Me.PART_CloseButton.Margin.Left + Me.PART_CloseButton.Margin.Right
+                If Not Me.PART_RightButtons Is Nothing Then minRight += Me.PART_RightButtons.ActualWidth + Me.PART_RightButtons.Margin.Left + Me.PART_RightButtons.Margin.Right
+                Dim leftCentered As Double = Math.Max(minLeft, (PART_MainBorder.ActualWidth - PART_Text.DesiredSize.Width) / 2)
                 PART_Text.Margin = New Thickness(leftCentered, PART_Text.Margin.Top, PART_Text.Margin.Right, PART_Text.Margin.Bottom)
-                PART_Text.UpdateLayout()
-            End If
+                If PART_MainBorder.ActualWidth - minLeft - minRight > 0 Then
+                    PART_Text.MaxWidth = PART_MainBorder.ActualWidth - minLeft - minRight
+                    Me.PART_Text.Visibility = Visibility.Visible
+                Else
+                    Me.PART_Text.Visibility = Visibility.Collapsed
+                End If
+                Me.PART_Text.EndInit()
+                    PART_Text.UpdateLayout()
+                End If
         End Sub
 
         Public Shared Iterator Function FindVisualChildren(Of T As DependencyObject)(depObj As DependencyObject) As IEnumerable(Of T)
@@ -430,6 +452,8 @@ Namespace Controls
             PART_MinimizeButton = Me.Template.FindName("PART_MinimizeButton", Me)
             PART_MaximizeRestoreButton = Me.Template.FindName("PART_MaximizeRestoreButton", Me)
             PART_CloseButton = Me.Template.FindName("PART_CloseButton", Me)
+            PART_RightButtons = Me.Template.FindName("PART_RightButtons", Me)
+            PART_LeftButtons = Me.Template.FindName("PART_LeftButtons", Me)
 
             If Me.DoShowChrome Then
                 If Not PART_RootBorder Is Nothing Then
@@ -1086,7 +1110,9 @@ Namespace Controls
                 .Source = _closeImage,
                 .Width = _closeImage.PixelWidth / _dpi.DpiScaleX,
                 .Height = _closeImage.PixelHeight / _dpi.DpiScaleY,
-                .Margin = If(Me.WindowState = WindowState.Maximized, New Thickness(), New Thickness(Me.Left, Me.Top, 0, 0)),
+                .Margin = If(Me.WindowState = WindowState.Maximized, New Thickness(), New Thickness(
+                    (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)),
+                    (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)), 0, 0)),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Stretch = Stretch.Fill

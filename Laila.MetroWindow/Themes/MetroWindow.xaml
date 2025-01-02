@@ -45,7 +45,7 @@
                                             <Button Style="{DynamicResource metroWindowIconButtonStyle}" 
                                             x:Name="PART_IconButton" WindowChrome.IsHitTestVisibleInChrome="True">0</Button>
 
-                                            <ItemsControl Grid.Column="1" ItemsSource="{TemplateBinding LeftButtons}">
+                                            <ItemsControl Grid.Column="1" ItemsSource="{TemplateBinding LeftButtons}" x:Name="PART_LeftButtons">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <StackPanel Orientation="Horizontal" />
@@ -89,7 +89,7 @@
                                                 Text="{Binding Title, RelativeSource={RelativeSource Mode=TemplatedParent}}" HorizontalAlignment="Left"
                                                 IsHitTestVisible="False" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
 
-                                            <ItemsControl Grid.Column="4" ItemsSource="{TemplateBinding RightButtons}" Margin="5,0,0,0">
+                                            <ItemsControl Grid.Column="4" ItemsSource="{TemplateBinding RightButtons}" Margin="5,0,0,0" x:Name="PART_RightButtons">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <StackPanel Orientation="Horizontal" />
