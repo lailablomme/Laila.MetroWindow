@@ -234,7 +234,12 @@ Namespace Controls
                 If Not Me.PART_MaximizeRestoreButton Is Nothing Then minRight += Me.PART_MaximizeRestoreButton.ActualWidth + Me.PART_MaximizeRestoreButton.Margin.Left + Me.PART_MaximizeRestoreButton.Margin.Right
                 If Not Me.PART_CloseButton Is Nothing Then minRight += Me.PART_CloseButton.ActualWidth + Me.PART_CloseButton.Margin.Left + Me.PART_CloseButton.Margin.Right
                 If Not Me.PART_RightButtons Is Nothing Then minRight += Me.PART_RightButtons.ActualWidth + Me.PART_RightButtons.Margin.Left + Me.PART_RightButtons.Margin.Right
-                Dim leftCentered As Double = Math.Max(minLeft, (PART_MainBorder.ActualWidth - PART_Text.DesiredSize.Width) / 2)
+                Dim leftCentered As Double
+                If Me.DoIntegrateMenu Then
+                    leftCentered = Math.Max(minLeft, (PART_MainBorder.ActualWidth - PART_Text.DesiredSize.Width) / 2)
+                Else
+                    leftCentered = minLeft
+                End If
                 PART_Text.Margin = New Thickness(leftCentered, PART_Text.Margin.Top, PART_Text.Margin.Right, PART_Text.Margin.Bottom)
                 If PART_MainBorder.ActualWidth - minLeft - minRight > 0 Then
                     PART_Text.MaxWidth = PART_MainBorder.ActualWidth - minLeft - minRight
@@ -1196,7 +1201,8 @@ Namespace Controls
                                 End If
                             End If
                         Case SC_MAXIMIZE
-                            If _renderingTier = 2 Then
+                            If _renderingTier = 2 _
+                                AndAlso (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
                                 If _isMinimized Then
                                     _isMinimized = False
 
