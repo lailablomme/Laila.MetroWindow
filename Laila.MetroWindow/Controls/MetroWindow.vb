@@ -747,7 +747,8 @@ Namespace Controls
                 (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
                 (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
                 (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
-            w.Content = New Grid()
+            Dim grid = New Grid()
+            w.Content = grid
 
             _maximizeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             _maximizeImage.Render(Me)
@@ -764,7 +765,7 @@ Namespace Controls
                 .Width = Double.NaN,
                 .Height = Double.NaN
             }
-            CType(w.Content, Grid).Children.Add(image2)
+            grid.Children.Add(image2)
 
             w.Show()
 
@@ -817,7 +818,7 @@ Namespace Controls
                 .Opacity = 0,
                 .Stretch = Stretch.Fill
             }
-            CType(w.Content, Grid).Children.Insert(0, image1)
+            grid.Children.Insert(0, image1)
             Dim border0 As Border = New Border() With {
                 .Margin = New Thickness(Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0),
                                         Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0),
@@ -830,7 +831,7 @@ Namespace Controls
                 .Height = 10000,
                 .Opacity = 0.85
             }
-            CType(w.Content, Grid).Children.Insert(0, border0)
+            grid.Children.Insert(0, border0)
             'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.WidthProperty, New Binding() With {
             '    .Path = New PropertyPath("Width"),
             '    .Source = CType(CType(w.Content, Grid).Children(1), Image)
@@ -874,8 +875,8 @@ Namespace Controls
                                 Await Task.Delay(250)
                                 _onContentRenderedAction = Nothing
                                 w.Close()
-                                CType(CType(w.Content, Grid).Children(1), Image).Source = Nothing
-                                CType(CType(w.Content, Grid).Children(2), Image).Source = Nothing
+                                image1.Source = Nothing
+                                image2.Source = Nothing
                                 _maximizeImage = Nothing
                                 w = Nothing
                             End Sub
@@ -928,20 +929,22 @@ Namespace Controls
                 (_s.WorkingArea.Top - _s.Bounds.Top) / (_dpi.PixelsPerInchY / 96.0),
                 (_s.Bounds.Right - _s.WorkingArea.Right) / (_dpi.PixelsPerInchX / 96.0),
                 (_s.Bounds.Bottom - _s.WorkingArea.Bottom) / (_dpi.PixelsPerInchY / 96.0))
-            w.Content = New Grid()
-            CType(w.Content, Grid).Children.Add(New Image() With {
-                .Margin = New Thickness(),
-                .VerticalAlignment = VerticalAlignment.Top,
-                .HorizontalAlignment = Windows.HorizontalAlignment.Left,
-                .Stretch = Stretch.Fill
-            })
+            Dim grid = New Grid()
+            w.Content = grid
 
             _maximizeImage = New RenderTargetBitmap(Me.PART_MainBorder.ActualWidth * _dpi.DpiScaleX, Me.PART_MainBorder.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             _maximizeImage.Render(Me.PART_MainBorder)
 
-            CType(CType(w.Content, Grid).Children(0), Image).Source = _maximizeImage
-            CType(CType(w.Content, Grid).Children(0), Image).Width = Double.NaN
-            CType(CType(w.Content, Grid).Children(0), Image).Height = Double.NaN
+            Dim image2 As Image = New Image() With {
+                .Margin = New Thickness(),
+                .VerticalAlignment = VerticalAlignment.Top,
+                .HorizontalAlignment = Windows.HorizontalAlignment.Left,
+                .Stretch = Stretch.Fill,
+                .Source = _maximizeImage,
+                .Width = Double.NaN,
+                .Height = Double.NaN
+            }
+            grid.Children.Add(image2)
 
             w.Show()
 
@@ -955,14 +958,14 @@ Namespace Controls
                 Me.GlowSize)
             Me.ActualWindowState = WindowState.Normal
             Me.Restore()
-            Await Task.Delay(150)
+            Await Task.Delay(100)
 
             Dim normalImage As RenderTargetBitmap = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             normalImage.Render(Me)
 
             _noPositionCorrection = False
 
-            CType(w.Content, Grid).Children.Insert(0, New Image() With {
+            Dim image1 As Image = New Image() With {
                 .Margin = New Thickness(),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
@@ -971,8 +974,9 @@ Namespace Controls
                 .Height = Double.NaN,
                 .Opacity = 0,
                 .Stretch = Stretch.Fill
-            })
-            CType(w.Content, Grid).Children.Insert(0, New Border() With {
+            }
+            grid.Children.Insert(0, image1)
+            Dim border0 As Border = New Border() With {
                 .Margin = New Thickness(),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
@@ -981,7 +985,8 @@ Namespace Controls
                 .Height = Double.NaN,
                 .Opacity = 0.85,
                 .CornerRadius = Me.PART_MainBorder.CornerRadius
-            })
+            }
+            grid.Children.Insert(0, border0)
             'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.WidthProperty, New Binding() With {
             '    .Path = New PropertyPath("Width"),
             '    .Source = CType(CType(w.Content, Grid).Children(2), Image)
@@ -1037,24 +1042,24 @@ Namespace Controls
                                 'Me.Opacity = 1
                                 Me.WindowState = WindowState.Normal
                                 w.Close()
-                                CType(CType(w.Content, Grid).Children(1), Image).Source = Nothing
-                                CType(CType(w.Content, Grid).Children(2), Image).Source = Nothing
+                                image1.Source = Nothing
+                                image2.Source = Nothing
                                 _maximizeImage = Nothing
                                 w = Nothing
                             End Sub, Threading.DispatcherPriority.ContextIdle)
                     End If
                 End Sub
-            CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.MarginProperty, ta2)
-            CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.MarginProperty, ta)
-            CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Image.MarginProperty, ta0)
+            image1.BeginAnimation(Image.MarginProperty, ta2)
+            image2.BeginAnimation(Image.MarginProperty, ta)
+            border0.BeginAnimation(Image.MarginProperty, ta0)
             'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.WidthProperty, da5)
             'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.HeightProperty, da6)
             'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.WidthProperty, da3)
             'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.HeightProperty, da4)
             'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.WidthProperty, da8)
             'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.HeightProperty, da9)
-            CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.OpacityProperty, da)
-            CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.OpacityProperty, da2)
+            image2.BeginAnimation(Image.OpacityProperty, da)
+            image1.BeginAnimation(Image.OpacityProperty, da2)
             'Me.BeginAnimation(Window.OpacityProperty, da7)
         End Sub
 
