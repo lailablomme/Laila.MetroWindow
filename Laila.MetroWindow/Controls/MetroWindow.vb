@@ -220,7 +220,7 @@ Namespace Controls
         End Sub
 
         Private Sub CenterTitle()
-            If Me.DoIntegrateMenu AndAlso Not PART_MenuPlaceHolder Is Nothing AndAlso Not PART_Text Is Nothing AndAlso Me.DoShowChrome Then
+            If Not PART_Text Is Nothing AndAlso Me.DoShowChrome Then
                 Me.PART_Text.BeginInit()
                 PART_Text.MaxWidth = Double.PositiveInfinity
                 Me.PART_Text.Margin = New Thickness()
@@ -243,8 +243,8 @@ Namespace Controls
                     Me.PART_Text.Visibility = Visibility.Collapsed
                 End If
                 Me.PART_Text.EndInit()
-                    PART_Text.UpdateLayout()
-                End If
+                PART_Text.UpdateLayout()
+            End If
         End Sub
 
         Public Shared Iterator Function FindVisualChildren(Of T As DependencyObject)(depObj As DependencyObject) As IEnumerable(Of T)
