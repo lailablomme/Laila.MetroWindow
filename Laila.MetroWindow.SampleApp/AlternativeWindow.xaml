@@ -4,7 +4,7 @@
                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                 xmlns:mw="clr-namespace:Laila.MetroWindow.Controls;assembly=Laila.MetroWindow"
-                xmlns:local="clr-namespace:Laila.MetroWindow.SampleApp" ResizeMode="CanResizeWithGrip" DoIntegrateMenu="True"
+                xmlns:local="clr-namespace:Laila.MetroWindow.SampleApp" ResizeMode="NoResize" DoIntegrateMenu="True"
                 xmlns:converters="clr-namespace:Laila.MetroWindow.Converters;assembly=Laila.MetroWindow" Icon="Windows.ico"
                 mc:Ignorable="d" Loaded="AlternativeWindow_Loaded" WindowStartupLocation="CenterOwner"
                 Title="AlternativeWindow" Height="350" Width="500">

@@ -1235,7 +1235,7 @@ Namespace Controls
                         handled = True
                         doRestoreFromMaximizedAnimation()
                         _skipMaximize = True
-                    Else
+                    ElseIf (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
                         handled = True
                         Dim w As Window = makeWindow()
                         doMaximizeAnimation(w, Me.Left, Me.Top, Me.Width, Me.Height)
