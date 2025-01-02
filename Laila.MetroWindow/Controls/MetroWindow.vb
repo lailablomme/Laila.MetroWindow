@@ -730,6 +730,7 @@ Namespace Controls
             w.Close()
         End Sub
 
+        Private _onContentRenderedAction As System.Action
         Private Async Sub doMaximizeAnimation(w As Window, left As Double, top As Double, width As Double, height As Double)
             _isAnimating = True
 
@@ -771,21 +772,25 @@ Namespace Controls
             Dim prevPadding = Me.PART_RootBorder.Padding
             Me.PART_RootBorder.Padding = New Thickness()
             Me.ActualWindowState = WindowState.Maximized
+            Me.Left = Int32.MaxValue - ((_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)) - 100
+            Me.Top = Int32.MaxValue - ((_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)) - 100
             Me.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
             Me.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
-            Me.Left = Int32.MaxValue - Me.Width - 100
-            Me.Top = Int32.MaxValue - Me.Height - 100
 
             Me.Opacity = 1
             Dim maximizedImage As RenderTargetBitmap = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
             maximizedImage.Render(Me)
             Me.Opacity = 0
 
-            Me.Left = left
-            Me.Top = top
             Me.Width = width
             Me.Height = height
+            Me.Left = left
+            Me.Top = top
             _noPositionCorrection = False
+
+            System.Windows.Application.Current.Dispatcher.Invoke(
+                Sub()
+                End Sub, Threading.DispatcherPriority.ContextIdle)
 
             Me.Maximize()
 
@@ -846,15 +851,19 @@ Namespace Controls
                 Sub(s, e)
                     If _isAnimating Then
                         _isAnimating = False
-                        Me.Opacity = 1
-                        System.Windows.Application.Current.Dispatcher.BeginInvoke(
-                            Sub()
+                        _onContentRenderedAction =
+                            Async Sub()
+                                Await Task.Delay(250)
+                                _onContentRenderedAction = Nothing
                                 w.Close()
                                 CType(CType(w.Content, Grid).Children(1), Image).Source = Nothing
                                 CType(CType(w.Content, Grid).Children(2), Image).Source = Nothing
                                 _maximizeImage = Nothing
                                 w = Nothing
-                            End Sub, Threading.DispatcherPriority.ContextIdle)
+                            End Sub
+                        Me.Opacity = 1
+                        Me.InvalidateVisual()
+                        Me.UpdateLayout()
                     End If
                 End Sub
             CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.MarginProperty, ta)
@@ -868,6 +877,19 @@ Namespace Controls
             'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.HeightProperty, da6)
             'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.WidthProperty, da7)
             'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.HeightProperty, da8)
+            'Await Task.Delay(MAXIMIZE_SPEED + 50)
+        End Sub
+
+        Protected Overrides Sub OnContentRendered(e As EventArgs)
+            MyBase.OnContentRendered(e)
+
+        End Sub
+
+        Protected Overrides Sub OnRender(drawingContext As DrawingContext)
+            MyBase.OnRender(drawingContext)
+            If Not _onContentRenderedAction Is Nothing Then
+                _onContentRenderedAction()
+            End If
         End Sub
 
 
