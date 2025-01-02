@@ -17,7 +17,7 @@
 	  <Version>2.4.1-alpha4</Version>
 	  <Authors>Laïla Blomme</Authors>
 	  <Description>A .NET6 WPF metro window featuring glow, configurable colors, menu integrated in title bar, alternative designs, saving and restoring of window position and minimize/maximize/restore/close animations.</Description>
-	  <Copyright>Copyright © 2024 by Laïla Blomme</Copyright>
+	  <Copyright>Copyright © 2024-2025 by Laïla Blomme</Copyright>
 	  <PackageProjectUrl>https://sourceforge.net/projects/laila-metrowindow/</PackageProjectUrl>
 	  <PackageReadmeFile>README.md</PackageReadmeFile>
 	  <PackageLicenseFile>LICENSE</PackageLicenseFile>
