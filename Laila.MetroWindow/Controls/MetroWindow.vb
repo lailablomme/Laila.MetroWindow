@@ -1120,8 +1120,13 @@ Namespace Controls
 
             Dim w As Window = makeWindow()
 
-            _closeImage = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
-            _closeImage.Render(Me)
+            If Me.WindowState = WindowState.Maximized Then
+                _closeImage = New RenderTargetBitmap(Me.PART_MainBorder.ActualWidth * _dpi.DpiScaleX, Me.PART_MainBorder.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
+                _closeImage.Render(Me.PART_MainBorder)
+            Else
+                _closeImage = New RenderTargetBitmap(Me.PART_RootBorder.ActualWidth * _dpi.DpiScaleX, Me.PART_RootBorder.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
+                _closeImage.Render(Me.PART_RootBorder)
+            End If
 
             w.Left = _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)
             w.Top = _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)
@@ -1136,14 +1141,13 @@ Namespace Controls
                 .Source = _closeImage,
                 .Width = _closeImage.PixelWidth / _dpi.DpiScaleX,
                 .Height = _closeImage.PixelHeight / _dpi.DpiScaleY,
-                .Margin = If(Me.WindowState = WindowState.Maximized, New Thickness(), New Thickness(
+                .Margin = If(Me.WindowState = WindowState.Maximized, New Thickness(-1, -1, 0, 0), New Thickness(
                     (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)),
                     (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)), 0, 0)),
                 .VerticalAlignment = VerticalAlignment.Top,
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Stretch = Stretch.Fill
             }
-            w.WindowState = Me.WindowState
 
             w.Show()
 
@@ -1155,11 +1159,11 @@ Namespace Controls
             ease.EasingMode = EasingMode.EaseInOut
             Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
             Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
-                        New Thickness(CType(w.Content, Image).Margin.Left + 30,
-                                      CType(w.Content, Image).Margin.Top + 30,
+                        New Thickness(CType(w.Content, Image).Margin.Left + CType(w.Content, Image).Width * 0.02,
+                                      CType(w.Content, Image).Margin.Top + CType(w.Content, Image).Height * 0.02,
                                       0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, Math.Max(CType(w.Content, Image).Width - 60, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, Math.Max(CType(w.Content, Image).Height - 60, 1), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, CType(w.Content, Image).Width * 0.96, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, CType(w.Content, Image).Height * 0.96, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
             da.EasingFunction = ease
             ta.EasingFunction = ease
             da2.EasingFunction = ease
