@@ -2,6 +2,7 @@
 Imports System.Collections.Specialized
 Imports System.ComponentModel
 Imports System.Globalization
+Imports System.Runtime.InteropServices
 Imports System.Threading
 Imports System.Windows
 Imports System.Windows.Controls
@@ -20,6 +21,14 @@ Imports Laila.MetroWindow.Helpers
 Namespace Controls
     Public Class MetroWindow
         Inherits Window
+
+        <DllImport("user32.dll", SetLastError:=True)>
+        Public Shared Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr, X As Integer, Y As Integer, cx As Integer, cy As Integer, uFlags As UInteger) As Boolean
+        End Function
+
+        Public Const SWP_NOACTIVATE As UInteger = &H10
+        Public Const SWP_NOMOVE As UInteger = &H2
+        Public Const SWP_NOSIZE As UInteger = &H1
 
         Public Shared ReadOnly GlowSizeProperty As DependencyProperty = DependencyProperty.Register("GlowSize", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(15), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly GlowStyleProperty As DependencyProperty = DependencyProperty.Register("GlowStyle", GetType(GlowStyle), GetType(MetroWindow), New FrameworkPropertyMetadata(Data.GlowStyle.Glowing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
@@ -87,7 +96,7 @@ Namespace Controls
 
         Private Const MINIMIZE_SPEED As Integer = 250
         Private Const MAXIMIZE_SPEED As Integer = 200
-        Private Const CLOSE_SPEED As Integer = 250
+        Private Const CLOSE_SPEED As Integer = 150
         Private Const WM_SYSCOMMAND As Integer = &H112
         Private Const SC_MINIMIZE As Integer = &HF020
         Private Const SC_MAXIMIZE As Integer = &HF030
@@ -1114,6 +1123,8 @@ Namespace Controls
         End Sub
 
         Private Async Sub doCloseAnimation()
+            'Await Task.Delay(3000)
+
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
@@ -1148,8 +1159,22 @@ Namespace Controls
                 .HorizontalAlignment = Windows.HorizontalAlignment.Left,
                 .Stretch = Stretch.Fill
             }
-
+            w.Topmost = False
+            w.Opacity = 0
+            w.ShowActivated = False
             w.Show()
+            Dim wi As WindowInteropHelper = New WindowInteropHelper(w)
+            Await Task.Delay(100)
+
+            Dim hWndW As IntPtr = wi.Handle
+            SetWindowPos(
+                hWndW,
+                hWnd,
+                0, 0, 0, 0,
+                SWP_NOACTIVATE Or SWP_NOMOVE Or SWP_NOSIZE Or &H400
+            )
+            Await Task.Delay(100)
+            w.Opacity = 1
 
             Await Task.Delay(50)
 
@@ -1159,11 +1184,11 @@ Namespace Controls
             ease.EasingMode = EasingMode.EaseInOut
             Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
             Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
-                        New Thickness(CType(w.Content, Image).Margin.Left + CType(w.Content, Image).Width * 0.02,
-                                      CType(w.Content, Image).Margin.Top + CType(w.Content, Image).Height * 0.02,
+                        New Thickness(CType(w.Content, Image).Margin.Left + CType(w.Content, Image).Width * 0.05,
+                                      CType(w.Content, Image).Margin.Top + CType(w.Content, Image).Height * 0.05,
                                       0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, CType(w.Content, Image).Width * 0.96, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, CType(w.Content, Image).Height * 0.96, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, CType(w.Content, Image).Width * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, CType(w.Content, Image).Height * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
             da.EasingFunction = ease
             ta.EasingFunction = ease
             da2.EasingFunction = ease
