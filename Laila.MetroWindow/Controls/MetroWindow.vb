@@ -284,8 +284,11 @@ Namespace Controls
             MyBase.OnSourceInitialized(e)
 
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
-            Dim source As HwndSource = HwndSource.FromHwnd(hWnd)
-            source.AddHook(AddressOf HwndHook)
+
+            If Me.AllowsTransparency Then
+                Dim source As HwndSource = HwndSource.FromHwnd(hWnd)
+                source.AddHook(AddressOf HwndHook)
+            End If
 
             If Me.DoShowChrome Then
                 Me.SetChromeWindow()
@@ -446,6 +449,8 @@ Namespace Controls
                 border = Me.GlowSize
             ElseIf Me.GlowStyle = GlowStyle.Shadow Then
                 border = Me.GlowSize / 2
+            Else
+                border = 0
             End If
 
             SetValue(System.Windows.Shell.WindowChrome.WindowChromeProperty,
@@ -1320,7 +1325,7 @@ Namespace Controls
             If Not _isReallyClosing Then MyBase.OnClosing(e)
 
             If Not e.Cancel Then
-                If Not _isReallyClosing AndAlso Not Me.WindowState = WindowState.Minimized Then
+                If Me.AllowsTransparency AndAlso Not _isReallyClosing AndAlso Not Me.WindowState = WindowState.Minimized Then
                     e.Cancel = True
                     doCloseAnimation()
                 Else

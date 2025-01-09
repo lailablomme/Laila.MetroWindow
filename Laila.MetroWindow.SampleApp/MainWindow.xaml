@@ -33,6 +33,7 @@
             <TextBlock Foreground="HotPink" FontSize="55" FontFamily="Segoe UI Light" TextAlignment="Center">Laïla</TextBlock>
             <TextBox Width="100" x:Name="textBox" />
             <Button x:Name="ShowAlternativeWindowButton" Margin="0,20,0,0">Show alternative window</Button>
+            <Button x:Name="ShowNoGlowMetroWindowButton" Margin="0,20,0,0">Show no glow MetroWindow</Button>
             <Button x:Name="CloseWindow" Margin="0,20,0,0">Close window</Button>
         </StackPanel>
     </Grid>

@@ -59,4 +59,11 @@ Class MainWindow
     Private Sub CloseWindow_Click(sender As Object, e As RoutedEventArgs) Handles CloseWindow.Click
         Me.Close()
     End Sub
+
+    Private Sub ShowNoGlowMetroWindowButton_Click(sender As Object, e As RoutedEventArgs) Handles ShowNoGlowMetroWindowButton.Click
+        Dim aw As NoGlowMetroWindow = New NoGlowMetroWindow()
+        aw.Owner = Me
+        aw.ShowInTaskbar = False
+        aw.Show()
+    End Sub
 End Class
