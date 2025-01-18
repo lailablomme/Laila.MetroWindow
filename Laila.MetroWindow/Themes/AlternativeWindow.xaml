@@ -293,11 +293,11 @@
 
                                             <StackPanel Grid.Column="5" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True" Margin="0,0,4,0">
                                                 <Button Style="{DynamicResource metroWindowButtonStyle}" 
-                                                        x:Name="PART_MinimizeButton">&#xE949;</Button>
+                                                        x:Name="PART_MinimizeButton">&#xE921;</Button>
                                                 <Button Style="{DynamicResource metroWindowButtonStyle}" 
-                                                        x:Name="PART_MaximizeRestoreButton">&#xE739;</Button>
+                                                        x:Name="PART_MaximizeRestoreButton">&#xE922;</Button>
                                                 <Button Style="{DynamicResource metroWindowCloseButtonStyle}" 
-                                                        x:Name="PART_CloseButton">&#xE106;</Button>
+                                                        x:Name="PART_CloseButton">&#xE8BB;</Button>
                                             </StackPanel>
                                         </Grid>
                                     </ContentControl>

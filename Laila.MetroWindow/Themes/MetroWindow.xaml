@@ -129,11 +129,20 @@
 
                                             <StackPanel Grid.Column="5" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
                                                 <Button Style="{DynamicResource metroWindowButtonStyle}" 
-                                                        x:Name="PART_MinimizeButton">&#xE949;</Button>
+                                                        x:Name="PART_MinimizeButton">
+                                                    <Path Data="M0.5,5.5 L10.5,5.5" Stroke="Black" StrokeThickness="1"
+                                                        Width="10.9" Height="5.9" HorizontalAlignment="Center" SnapsToDevicePixels="True" UseLayoutRounding="True" />
+                                                </Button>
                                                 <Button Style="{DynamicResource metroWindowButtonStyle}" 
-                                                        x:Name="PART_MaximizeRestoreButton">&#xE739;</Button>
+                                                        x:Name="PART_MaximizeRestoreButton">
+                                                    <Path Data="M0.5,0.5 L10.5,0.5 L10.5,10.5 L0.5,10.5 Z" Stroke="Black" StrokeThickness="1"
+                                                          Width="10.9" Height="10.9" HorizontalAlignment="Center" SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                                                </Button>
                                                 <Button Style="{DynamicResource metroWindowCloseButtonStyle}" 
-                                                        x:Name="PART_CloseButton">&#xE106;</Button>
+                                                        x:Name="PART_CloseButton">
+                                                    <Path Data="M0.5,0.5 L10.5,10.5 M10.5,0.5 L0.5,10.5" Stroke="Black" StrokeThickness="1"
+                                                        Width="10.9" Height="10.9" HorizontalAlignment="Center" SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                                                </Button>
                                             </StackPanel>
                                         </Grid>
                                     </ContentControl>
@@ -172,7 +181,12 @@
                         </Trigger>
                         <Trigger Property="ActualWindowState" Value="Maximized">
                             <Setter Property="Visibility" TargetName="PART_SizeGrip" Value="Collapsed" />
-                            <Setter Property="Content" TargetName="PART_MaximizeRestoreButton" Value="&#xE923;" />
+                            <Setter Property="Content" TargetName="PART_MaximizeRestoreButton">
+                                <Setter.Value>
+                                    <Path Data="M0.5,3.5 L8.5,3 L8.5,10.5 L0.5,10.5 L0.5,3.5 M3.5,0.5 L10.5,0.5 L10.5,8.5" Stroke="Black" StrokeThickness="1"
+                                        Width="10.9" Height="10.9" HorizontalAlignment="Center" SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <DataTrigger Binding="{Binding ResizeMode, RelativeSource={RelativeSource Mode=Self}}" Value="NoResize">
                             <Setter Property="Visibility" TargetName="PART_MinimizeButton" Value="Collapsed" />
