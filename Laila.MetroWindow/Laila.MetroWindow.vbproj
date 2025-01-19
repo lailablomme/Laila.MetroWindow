@@ -14,7 +14,7 @@
 	  <UseWindowsForms>true</UseWindowsForms>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <Title>Laila.MetroWindow</Title>
-	  <Version>2.4.3-alpha3</Version>
+	  <Version>2.4.3-alpha4</Version>
 	  <Authors>Laïla Blomme</Authors>
 	  <Description>A .NET6 WPF metro window featuring glow, configurable colors, menu integrated in title bar, alternative designs, saving and restoring of window position and minimize/maximize/restore/close animations.</Description>
 	  <Copyright>Copyright © 2024-2025 by Laïla Blomme</Copyright>

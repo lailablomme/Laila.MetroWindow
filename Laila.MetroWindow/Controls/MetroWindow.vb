@@ -3,10 +3,8 @@ Imports System.Collections.Specialized
 Imports System.ComponentModel
 Imports System.Globalization
 Imports System.Runtime.InteropServices
-Imports System.Threading
 Imports System.Windows
 Imports System.Windows.Controls
-Imports System.Windows.Data
 Imports System.Windows.Input
 Imports System.Windows.Interop
 Imports System.Windows.Markup
@@ -24,6 +22,9 @@ Namespace Controls
 
         <DllImport("user32.dll", SetLastError:=True)>
         Private Shared Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr, X As Integer, Y As Integer, cx As Integer, cy As Integer, uFlags As UInteger) As Boolean
+        End Function
+        <DllImport("user32.dll", SetLastError:=True)>
+        Private Shared Function ShowWindow(hWnd As IntPtr, nCmdShow As Integer) As Boolean
         End Function
 
         Public Shared ReadOnly GlowSizeProperty As DependencyProperty = DependencyProperty.Register("GlowSize", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(15), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
@@ -111,7 +112,7 @@ Namespace Controls
                         If Not _noPositionCorrection _
                         AndAlso Not (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
                             ' keep window within this screen
-                            System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                            UIHelper.OnUIThreadAsync(
                                 Sub()
                                     Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
                                     Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwnd(hWnd)
@@ -401,7 +402,7 @@ Namespace Controls
                     .ResizeBorderThickness = If(Me.WindowState = WindowState.Maximized, New Thickness(5),
                         If(Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip, New Thickness(7 + border), New Thickness(0))),
                     .CornerRadius = New CornerRadius(0),
-                    .GlassFrameThickness = If(Me.GlowStyle = GlowStyle.None, New Thickness(0, 0, 0, 1), New Thickness(0))
+                    .GlassFrameThickness = If(Me.GlowStyle = GlowStyle.None, New Thickness(1, 1, 1, 1), New Thickness(0))
                 })
         End Sub
 
@@ -419,6 +420,8 @@ Namespace Controls
             PART_CloseButton = Me.Template.FindName("PART_CloseButton", Me)
             PART_RightButtons = Me.Template.FindName("PART_RightButtons", Me)
             PART_LeftButtons = Me.Template.FindName("PART_LeftButtons", Me)
+
+            setRootBorderPadding()
 
             If Me.DoShowChrome Then
                 If Not PART_RootBorder Is Nothing Then
@@ -800,7 +803,7 @@ Namespace Controls
             Me.EndInit()
             _noPositionCorrection = False
 
-            System.Windows.Application.Current.Dispatcher.Invoke(
+            UIHelper.OnUIThread(
                 Sub()
                 End Sub, Threading.DispatcherPriority.Render)
 
@@ -983,7 +986,7 @@ Namespace Controls
                 Sub(s, e)
                     If _isAnimating Then
                         _isAnimating = False
-                        System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                        UIHelper.OnUIThreadAsync(
                             Sub()
                                 Me.WindowState = WindowState.Normal
                                 w.Close()
@@ -1041,21 +1044,17 @@ Namespace Controls
             w.ShowActivated = False
             w.Show()
             Dim wi As WindowInteropHelper = New WindowInteropHelper(w)
-            Await Task.Delay(100)
-
-            Dim hWndW As IntPtr = wi.Handle
+            Await Task.Delay(250)
             SetWindowPos(
-                hWndW,
+                wi.Handle,
                 hWnd,
                 0, 0, 0, 0,
                 SWP_NOACTIVATE Or SWP_NOMOVE Or SWP_NOSIZE Or &H400
             )
-            Await Task.Delay(100)
             w.Opacity = 1
-
             Await Task.Delay(50)
-
             Me.Opacity = 0
+            Await Task.Delay(50)
 
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
@@ -1072,7 +1071,7 @@ Namespace Controls
             da3.EasingFunction = ease
             AddHandler da.Completed,
                 Sub(s2 As Object, e2 As EventArgs)
-                    Application.Current.Dispatcher.BeginInvoke(
+                    UIHelper.OnUIThreadAsync(
                         Sub()
                             w.Close()
                             CType(w.Content, Image).Source = Nothing
@@ -1103,7 +1102,7 @@ Namespace Controls
                                 Dim w As Window = makeWindow()
 
                                 doMinimizeAnimationPt1(w, _wasMaximized)
-                                Windows.Application.Current.Dispatcher.BeginInvoke(
+                                UIHelper.OnUIThreadAsync(
                                     Sub()
                                         doMinimizeAnimationPt2(w)
                                     End Sub)
@@ -1201,7 +1200,10 @@ Namespace Controls
             If Not e.Cancel Then
                 If Me.AllowsTransparency AndAlso Not _isReallyClosing AndAlso Not Me.WindowState = WindowState.Minimized Then
                     e.Cancel = True
-                    doCloseAnimation()
+                    If Not _isAnimating Then
+                        _isAnimating = True
+                        doCloseAnimation()
+                    End If
                 Else
                     ' avoid main window disappearing after close
                     If Not Me.Owner Is Nothing Then
