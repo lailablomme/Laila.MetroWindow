@@ -30,7 +30,7 @@ Namespace Controls
         Public Shared ReadOnly GlowSizeProperty As DependencyProperty = DependencyProperty.Register("GlowSize", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(15), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly GlowStyleProperty As DependencyProperty = DependencyProperty.Register("GlowStyle", GetType(GlowStyle), GetType(MetroWindow), New FrameworkPropertyMetadata(Data.GlowStyle.Glowing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly GlowColorProperty As DependencyProperty = DependencyProperty.Register("GlowColor", GetType(Media.Color), GetType(MetroWindow), New FrameworkPropertyMetadata(Media.Colors.Red, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
-        Public Shared ReadOnly CaptionHeightProperty As DependencyProperty = DependencyProperty.Register("CaptionHeight", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(31), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
+        Public Shared ReadOnly CaptionHeightProperty As DependencyProperty = DependencyProperty.Register("CaptionHeight", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(26), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly DoIntegrateMenuProperty As DependencyProperty = DependencyProperty.Register("DoIntegrateMenu", GetType(Boolean), GetType(MetroWindow), New FrameworkPropertyMetadata(True, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly DoShowChromeProperty As DependencyProperty = DependencyProperty.Register("DoShowChrome", GetType(Boolean), GetType(MetroWindow), New FrameworkPropertyMetadata(True, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly LeftButtonsProperty As DependencyProperty = DependencyProperty.Register("LeftButtons", GetType(ObservableCollection(Of ButtonData)), GetType(MetroWindow), New FrameworkPropertyMetadata(Nothing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
@@ -398,7 +398,7 @@ Namespace Controls
 
             SetValue(System.Windows.Shell.WindowChrome.WindowChromeProperty,
                 New System.Windows.Shell.WindowChrome() With {
-                    .CaptionHeight = Me.CaptionHeight,
+                    .CaptionHeight = Me.CaptionHeight + Me.PART_RootBorder.Margin.Top,
                     .ResizeBorderThickness = If(Me.WindowState = WindowState.Maximized, New Thickness(5),
                         If(Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip, New Thickness(7 + border), New Thickness(0))),
                     .CornerRadius = New CornerRadius(0),
@@ -526,8 +526,6 @@ Namespace Controls
 
         Protected Overrides Sub OnStateChanged(e As EventArgs)
             If Me.DoShowChrome Then
-                SetChromeWindow()
-
                 ' save state
                 If Not _dontUpdatePosition Then
                     If Me.WindowState <> WindowState.Normal Then
@@ -537,6 +535,8 @@ Namespace Controls
                     _noPositionCorrection = True
                 End If
 
+                setMargin()
+                SetChromeWindow()
                 setMargin()
 
                 If Me.WindowState = WindowState.Maximized AndAlso Not _isAnimating Then
