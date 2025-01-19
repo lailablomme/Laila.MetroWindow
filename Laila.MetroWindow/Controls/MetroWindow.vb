@@ -23,12 +23,8 @@ Namespace Controls
         Inherits Window
 
         <DllImport("user32.dll", SetLastError:=True)>
-        Public Shared Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr, X As Integer, Y As Integer, cx As Integer, cy As Integer, uFlags As UInteger) As Boolean
+        Private Shared Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr, X As Integer, Y As Integer, cx As Integer, cy As Integer, uFlags As UInteger) As Boolean
         End Function
-
-        Public Const SWP_NOACTIVATE As UInteger = &H10
-        Public Const SWP_NOMOVE As UInteger = &H2
-        Public Const SWP_NOSIZE As UInteger = &H1
 
         Public Shared ReadOnly GlowSizeProperty As DependencyProperty = DependencyProperty.Register("GlowSize", GetType(Double), GetType(MetroWindow), New FrameworkPropertyMetadata(Convert.ToDouble(15), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly GlowStyleProperty As DependencyProperty = DependencyProperty.Register("GlowStyle", GetType(GlowStyle), GetType(MetroWindow), New FrameworkPropertyMetadata(Data.GlowStyle.Glowing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
@@ -40,68 +36,30 @@ Namespace Controls
         Public Shared ReadOnly RightButtonsProperty As DependencyProperty = DependencyProperty.Register("RightButtons", GetType(ObservableCollection(Of ButtonData)), GetType(MetroWindow), New FrameworkPropertyMetadata(Nothing, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
         Public Shared ReadOnly ActualWindowStateProperty As DependencyProperty = DependencyProperty.Register("ActualWindowState", GetType(WindowState), GetType(MetroWindow), New FrameworkPropertyMetadata(WindowState.Normal, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault))
 
-        Public Property GlowColor() As Media.Color
-            Get
-                Return GetValue(GlowColorProperty)
-            End Get
-            Set(ByVal value As Media.Color)
-                SetCurrentValue(GlowColorProperty, value)
-            End Set
-        End Property
-
-        Public Property DoIntegrateMenu() As Boolean
-            Get
-                Return GetValue(DoIntegrateMenuProperty)
-            End Get
-            Set(ByVal value As Boolean)
-                SetCurrentValue(DoIntegrateMenuProperty, value)
-            End Set
-        End Property
-
-        Public Property DoShowChrome() As Boolean
-            Get
-                Return GetValue(DoShowChromeProperty)
-            End Get
-            Set(ByVal value As Boolean)
-                SetCurrentValue(DoShowChromeProperty, value)
-            End Set
-        End Property
-
-        Public Property CaptionHeight() As Double
-            Get
-                Return GetValue(CaptionHeightProperty)
-            End Get
-            Set(ByVal value As Double)
-                SetCurrentValue(CaptionHeightProperty, value)
-            End Set
-        End Property
-
-        Public Property LeftButtons() As ObservableCollection(Of ButtonData)
-            Get
-                Return GetValue(LeftButtonsProperty)
-            End Get
-            Set(ByVal value As ObservableCollection(Of ButtonData))
-                SetCurrentValue(LeftButtonsProperty, value)
-            End Set
-        End Property
-
-        Public Property RightButtons() As ObservableCollection(Of ButtonData)
-            Get
-                Return GetValue(RightButtonsProperty)
-            End Get
-            Set(ByVal value As ObservableCollection(Of ButtonData))
-                SetCurrentValue(RightButtonsProperty, value)
-            End Set
-        End Property
+        Private Const SWP_NOACTIVATE As UInteger = &H10
+        Private Const SWP_NOMOVE As UInteger = &H2
+        Private Const SWP_NOSIZE As UInteger = &H1
+        Private Const WM_SYSCOMMAND As Integer = &H112
+        Private Const WM_NCLBUTTONDBLCLK As Integer = &HA3
+        Private Const SC_MINIMIZE As Integer = &HF020
+        Private Const SC_MAXIMIZE As Integer = &HF030
+        Private Const SC_RESTORE As Integer = &HF120
 
         Private Const MINIMIZE_SPEED As Integer = 250
         Private Const MAXIMIZE_SPEED As Integer = 200
         Private Const CLOSE_SPEED As Integer = 150
-        Private Const WM_SYSCOMMAND As Integer = &H112
-        Private Const SC_MINIMIZE As Integer = &HF020
-        Private Const SC_MAXIMIZE As Integer = &HF030
-        Private Const SC_RESTORE As Integer = &HF120
-        Private Const WM_NCLBUTTONDBLCLK As Integer = &HA3
+
+        Private PART_RootBorder As Border
+        Private PART_GlowBorder As Border
+        Private PART_MainBorder As Border
+        Private PART_MenuPlaceHolder As Grid
+        Private PART_Text As TextBlock
+        Private PART_IconButton As Button
+        Private PART_MinimizeButton As Button
+        Private PART_MaximizeRestoreButton As Button
+        Private PART_CloseButton As Button
+        Private PART_RightButtons As ItemsControl
+        Private PART_LeftButtons As ItemsControl
 
         Private _minimizeImage As RenderTargetBitmap
         Private _maximizeImage As RenderTargetBitmap
@@ -112,21 +70,8 @@ Namespace Controls
         Private _dpi As DpiScale
         Private _isMinimized As Boolean = False
         Private _wasMaximized As Boolean = False
-        Private _windowGuid As String = "9bf6faf8-7fdc-4525-93e5-9cd8f97209a4"
+        Private _windowGuid As String = Guid.NewGuid().ToString()
         Private _originalSizeToContent As SizeToContent
-        Private PART_TitleBar As ContentControl
-        Private PART_RootBorder As Border
-        Private PART_GlowBorder As Border
-        Private PART_MainBorder As Border
-        Private PART_MainGrid As Grid
-        Private PART_MenuPlaceHolder As Grid
-        Private PART_Text As TextBlock
-        Private PART_IconButton As Button
-        Private PART_MinimizeButton As Button
-        Private PART_MaximizeRestoreButton As Button
-        Private PART_CloseButton As Button
-        Private PART_RightButtons As ItemsControl
-        Private PART_LeftButtons As ItemsControl
         Private _originalTitleMargin As Thickness
         Private _isMenuIntegrated As Boolean = False
         Private _position As WindowPositionData = Nothing
@@ -135,7 +80,7 @@ Namespace Controls
         Private _dontUpdatePosition As Boolean = True
         Private _isAnimating As Boolean
         Private _isReallyClosing As Boolean
-        Private _renderingTier As Integer
+        Private _isFirstCenterTitle As Boolean = True
 
         Shared Sub New()
             DefaultStyleKeyProperty.OverrideMetadata(GetType(MetroWindow), New FrameworkPropertyMetadata(GetType(MetroWindow)))
@@ -144,8 +89,6 @@ Namespace Controls
         Public Sub New()
             Me.DefaultStyleKey = GetType(MetroWindow)
             Me.Language = XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)
-
-            _renderingTier = RenderCapability.Tier >> 16
 
             AddHandler Me.Loaded,
                 Sub(sender As Object, e As EventArgs)
@@ -229,11 +172,10 @@ Namespace Controls
             End If
         End Sub
 
-        Private _firstCenterTitle As Boolean = True
         Private Sub CenterTitle()
             If Not PART_Text Is Nothing AndAlso Me.DoShowChrome Then
-                If _firstCenterTitle Then
-                    _firstCenterTitle = False
+                If _isFirstCenterTitle Then
+                    _isFirstCenterTitle = False
                     _originalTitleMargin = Me.PART_Text.Margin
                 End If
                 Me.PART_Text.BeginInit()
@@ -470,8 +412,6 @@ Namespace Controls
             PART_RootBorder = Me.Template.FindName("PART_RootBorder", Me)
             PART_GlowBorder = Me.Template.FindName("PART_GlowBorder", Me)
             PART_MainBorder = Me.Template.FindName("PART_MainBorder", Me)
-            PART_MainGrid = Me.Template.FindName("PART_MainGrid", Me)
-            PART_TitleBar = Me.Template.FindName("PART_TitleBar", Me)
             PART_Text = Me.Template.FindName("PART_Text", Me)
             PART_IconButton = Me.Template.FindName("PART_IconButton", Me)
             PART_MinimizeButton = Me.Template.FindName("PART_MinimizeButton", Me)
@@ -508,12 +448,6 @@ Namespace Controls
                         Sub()
                             Me.CenterTitle()
                         End Sub
-                End If
-
-                If Not PART_TitleBar Is Nothing Then
-                    PART_TitleBar.Focus()
-                    Keyboard.ClearFocus()
-                    PART_TitleBar.Focusable = False
                 End If
 
                 If Not PART_IconButton Is Nothing Then
@@ -603,15 +537,23 @@ Namespace Controls
                 setMargin()
 
                 If Me.WindowState = WindowState.Maximized AndAlso Not _isAnimating Then
-                    Me.PART_RootBorder.Padding = New Thickness()
+                    setRootBorderPadding(True)
                 ElseIf Me.WindowState = WindowState.Normal AndAlso Not _isAnimating Then
-                    Me.PART_RootBorder.Padding = New Thickness(
-                            If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
-                            If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
-                            Me.GlowSize,
-                            Me.GlowSize)
+                    setRootBorderPadding()
                     Me.ActualWindowState = WindowState.Normal
                 End If
+            End If
+        End Sub
+
+        Private Sub setRootBorderPadding(Optional isCollapsed As Boolean = False)
+            If isCollapsed Then
+                Me.PART_RootBorder.Padding = New Thickness()
+            Else
+                Me.PART_RootBorder.Padding = New Thickness(
+                    If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                    If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
+                    Me.GlowSize,
+                    Me.GlowSize)
             End If
         End Sub
 
@@ -833,8 +775,6 @@ Namespace Controls
 
             w.Show()
 
-            'Me.Opacity = 0
-
             _isAnimating = True
 
             _noPositionCorrection = True
@@ -846,7 +786,6 @@ Namespace Controls
             Me.Top = Int32.MaxValue - ((_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)) - 100
             Me.Width = (_s.WorkingArea.Right - _s.WorkingArea.Left) / (_dpi.PixelsPerInchX / 96.0)
             Me.Height = (_s.WorkingArea.Bottom - _s.WorkingArea.Top) / (_dpi.PixelsPerInchY / 96.0)
-            'Me.Opacity = 1
             Me.EndInit()
 
             Dim maximizedImage As RenderTargetBitmap = New RenderTargetBitmap(Me.ActualWidth * _dpi.DpiScaleX, Me.ActualHeight * _dpi.DpiScaleY, _dpi.PixelsPerInchX, _dpi.PixelsPerInchY, PixelFormats.Pbgra32)
@@ -860,8 +799,6 @@ Namespace Controls
             Me.Top = top
             Me.EndInit()
             _noPositionCorrection = False
-            'Me.InvalidateVisual()
-            'Me.UpdateLayout()
 
             System.Windows.Application.Current.Dispatcher.Invoke(
                 Sub()
@@ -896,14 +833,6 @@ Namespace Controls
                 .Opacity = 0.85
             }
             grid.Children.Insert(0, border0)
-            'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.WidthProperty, New Binding() With {
-            '    .Path = New PropertyPath("Width"),
-            '    .Source = CType(CType(w.Content, Grid).Children(1), Image)
-            '})
-            'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.HeightProperty, New Binding() With {
-            '    .Path = New PropertyPath("Height"),
-            '    .Source = CType(CType(w.Content, Grid).Children(1), Image)
-            '})
 
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
@@ -918,18 +847,6 @@ Namespace Controls
             da.EasingFunction = ease
             Dim da2 As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             da2.EasingFunction = ease
-            'Dim da3 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da3.EasingFunction = ease
-            'Dim da4 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da4.EasingFunction = ease
-            'Dim da5 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX + prevPadding.Left + prevPadding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da5.EasingFunction = ease
-            'Dim da6 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY + prevPadding.Top + prevPadding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da6.EasingFunction = ease
-            'Dim da7 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelWidth / _dpi.DpiScaleX, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da7.EasingFunction = ease
-            'Dim da8 As DoubleAnimation = New DoubleAnimation(maximizedImage.PixelHeight / _dpi.DpiScaleY, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da8.EasingFunction = ease
             AddHandler ta.Completed,
                 Sub(s, e)
                     If _isAnimating Then
@@ -954,13 +871,6 @@ Namespace Controls
             border0.BeginAnimation(Image.MarginProperty, ta0)
             image1.BeginAnimation(Image.OpacityProperty, da)
             image2.BeginAnimation(Image.OpacityProperty, da2)
-            'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.WidthProperty, da3)
-            'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.HeightProperty, da4)
-            'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.WidthProperty, da5)
-            'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.HeightProperty, da6)
-            'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.WidthProperty, da7)
-            'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.HeightProperty, da8)
-            'Await Task.Delay(MAXIMIZE_SPEED + 50)
         End Sub
 
         Protected Overrides Sub OnContentRendered(e As EventArgs)
@@ -974,7 +884,6 @@ Namespace Controls
                 _onContentRenderedAction()
             End If
         End Sub
-
 
         Private Async Sub doRestoreFromMaximizedAnimation()
             _isAnimating = True
@@ -1015,11 +924,7 @@ Namespace Controls
             _isAnimating = True
 
             _noPositionCorrection = True
-            Me.PART_RootBorder.Padding = New Thickness(
-                If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
-                If(Me.GlowStyle = GlowStyle.Glowing, Me.GlowSize, 0),
-                Me.GlowSize,
-                Me.GlowSize)
+            setRootBorderPadding()
             Me.ActualWindowState = WindowState.Normal
             Me.Restore()
             Await Task.Delay(100)
@@ -1051,14 +956,6 @@ Namespace Controls
                 .CornerRadius = Me.PART_MainBorder.CornerRadius
             }
             grid.Children.Insert(0, border0)
-            'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.WidthProperty, New Binding() With {
-            '    .Path = New PropertyPath("Width"),
-            '    .Source = CType(CType(w.Content, Grid).Children(2), Image)
-            '})
-            'CType(CType(w.Content, Grid).Children(0), Border).SetBinding(Border.HeightProperty, New Binding() With {
-            '    .Path = New PropertyPath("Height"),
-            '    .Source = CType(CType(w.Content, Grid).Children(2), Image)
-            '})
 
             Dim ease As SineEase = New SineEase()
             ease.EasingMode = EasingMode.EaseInOut
@@ -1082,28 +979,12 @@ Namespace Controls
             da.EasingFunction = ease
             Dim da2 As DoubleAnimation = New DoubleAnimation(0, 1, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             da2.EasingFunction = ease
-            'Dim da3 As DoubleAnimation = New DoubleAnimation(Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da3.EasingFunction = ease
-            'Dim da4 As DoubleAnimation = New DoubleAnimation(Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da4.EasingFunction = ease
-            'Dim da5 As DoubleAnimation = New DoubleAnimation(Me.Width, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da5.EasingFunction = ease
-            'Dim da6 As DoubleAnimation = New DoubleAnimation(Me.Height, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da6.EasingFunction = ease
-            'Dim da7 As DoubleAnimation = New DoubleAnimation(1, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da7.EasingFunction = ease
-            'Dim da8 As DoubleAnimation = New DoubleAnimation(Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da8.EasingFunction = ease
-            'Dim da9 As DoubleAnimation = New DoubleAnimation(Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
-            'da9.EasingFunction = ease
             AddHandler ta.Completed,
                 Sub(s, e)
                     If _isAnimating Then
                         _isAnimating = False
                         System.Windows.Application.Current.Dispatcher.BeginInvoke(
                             Sub()
-                                'Me.BeginAnimation(Window.OpacityProperty, Nothing)
-                                'Me.Opacity = 1
                                 Me.WindowState = WindowState.Normal
                                 w.Close()
                                 image1.Source = Nothing
@@ -1116,20 +997,11 @@ Namespace Controls
             image1.BeginAnimation(Image.MarginProperty, ta2)
             image2.BeginAnimation(Image.MarginProperty, ta)
             border0.BeginAnimation(Image.MarginProperty, ta0)
-            'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.WidthProperty, da5)
-            'CType(CType(w.Content, Grid).Children(1), Image).BeginAnimation(Image.HeightProperty, da6)
-            'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.WidthProperty, da3)
-            'CType(CType(w.Content, Grid).Children(2), Image).BeginAnimation(Image.HeightProperty, da4)
-            'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.WidthProperty, da8)
-            'CType(CType(w.Content, Grid).Children(0), Border).BeginAnimation(Border.HeightProperty, da9)
             image2.BeginAnimation(Image.OpacityProperty, da)
             image1.BeginAnimation(Image.OpacityProperty, da2)
-            'Me.BeginAnimation(Window.OpacityProperty, da7)
         End Sub
 
         Private Async Sub doCloseAnimation()
-            'Await Task.Delay(3000)
-
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
@@ -1208,7 +1080,7 @@ Namespace Controls
                             w = Nothing
 
                             _isReallyClosing = True
-                            ' sometimes it throws, no good reason :(
+
                             Me.Close()
                         End Sub, DispatcherPriority.ContextIdle)
                 End Sub
@@ -1246,7 +1118,7 @@ Namespace Controls
                                     handled = True
                                     doRestoreFromMinimizedAnimation(w, _wasMaximized, Nothing)
                                 End If
-                            ElseIf Me.WindowState = WindowState.Maximized AndAlso _renderingTier = 2 Then
+                            ElseIf Me.WindowState = WindowState.Maximized Then
                                 If Not _skipMaximize Then
                                     handled = True
                                     doRestoreFromMaximizedAnimation()
@@ -1256,8 +1128,7 @@ Namespace Controls
                                 End If
                             End If
                         Case SC_MAXIMIZE
-                            If _renderingTier = 2 _
-                                AndAlso (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
+                            If (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
                                 If _isMinimized Then
                                     _isMinimized = False
 
@@ -1290,11 +1161,14 @@ Namespace Controls
                         handled = True
                         doRestoreFromMaximizedAnimation()
                         _skipMaximize = True
-                    ElseIf (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
+                    ElseIf Me.WindowState = WindowState.Normal AndAlso
+                        (Me.ResizeMode = ResizeMode.CanResize OrElse Me.ResizeMode = ResizeMode.CanResizeWithGrip) Then
                         handled = True
                         Dim w As Window = makeWindow()
                         doMaximizeAnimation(w, Me.Left, Me.Top, Me.Width, Me.Height)
                         _skipMaximize = True
+                    ElseIf Me.WindowState = WindowState.Minimized Then
+                        Me.Restore()
                     End If
             End Select
 
@@ -1381,6 +1255,60 @@ Namespace Controls
             End Get
             Set(ByVal value As WindowState)
                 SetCurrentValue(ActualWindowStateProperty, value)
+            End Set
+        End Property
+
+        Public Property GlowColor() As Media.Color
+            Get
+                Return GetValue(GlowColorProperty)
+            End Get
+            Set(ByVal value As Media.Color)
+                SetCurrentValue(GlowColorProperty, value)
+            End Set
+        End Property
+
+        Public Property DoIntegrateMenu() As Boolean
+            Get
+                Return GetValue(DoIntegrateMenuProperty)
+            End Get
+            Set(ByVal value As Boolean)
+                SetCurrentValue(DoIntegrateMenuProperty, value)
+            End Set
+        End Property
+
+        Public Property DoShowChrome() As Boolean
+            Get
+                Return GetValue(DoShowChromeProperty)
+            End Get
+            Set(ByVal value As Boolean)
+                SetCurrentValue(DoShowChromeProperty, value)
+            End Set
+        End Property
+
+        Public Property CaptionHeight() As Double
+            Get
+                Return GetValue(CaptionHeightProperty)
+            End Get
+            Set(ByVal value As Double)
+                SetCurrentValue(CaptionHeightProperty, value)
+            End Set
+        End Property
+
+        Public Property LeftButtons() As ObservableCollection(Of ButtonData)
+            Get
+                Return GetValue(LeftButtonsProperty)
+            End Get
+            Set(ByVal value As ObservableCollection(Of ButtonData))
+                SetCurrentValue(LeftButtonsProperty, value)
+            End Set
+        End Property
+
+        Public Property RightButtons() As ObservableCollection(Of ButtonData)
+            Get
+                Return GetValue(RightButtonsProperty)
+            End Get
+            Set(ByVal value As ObservableCollection(Of ButtonData))
+                SetCurrentValue(RightButtonsProperty, value)
             End Set
         End Property
     End Class
