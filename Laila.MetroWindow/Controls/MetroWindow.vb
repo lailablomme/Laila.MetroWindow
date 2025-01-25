@@ -2,6 +2,7 @@
 Imports System.Collections.Specialized
 Imports System.ComponentModel
 Imports System.Globalization
+Imports System.Reflection
 Imports System.Runtime.InteropServices
 Imports System.Windows
 Imports System.Windows.Controls
@@ -1045,12 +1046,16 @@ Namespace Controls
             w.Show()
             Dim wi As WindowInteropHelper = New WindowInteropHelper(w)
             wi.EnsureHandle()
-            Dim source As HwndSource = HwndSource.FromHwnd(wi.Handle)
             Dim isOnce As Boolean
+            Dim isW7OrLower As Boolean = isWindows7OrLower
+            Dim source As HwndSource = HwndSource.FromHwnd(wi.Handle)
             source.AddHook(
                 Function(hWndW As IntPtr, MSG As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
+                    Dim folder As String = IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
+                    IO.File.AppendAllLines(IO.Path.Combine(folder, "wm.log"),
+                                                   {CType(MSG, WM).ToString()})
                     Select Case MSG
-                        Case WM.WINDOWPOSCHANGING
+                        Case If(isW7OrLower, 49620, WM.WINDOWPOSCHANGING)
                             If isOnce Then Return IntPtr.Zero
                             isOnce = True
                             UIHelper.OnUIThread(
@@ -1325,6 +1330,14 @@ Namespace Controls
             Set(ByVal value As ObservableCollection(Of ButtonData))
                 SetCurrentValue(RightButtonsProperty, value)
             End Set
+        End Property
+
+        Private ReadOnly Property isWindows7OrLower() As Boolean
+            Get
+                ' Windows 7 has version number 6.1
+                Dim osVersion As Version = Environment.OSVersion.Version
+                Return osVersion.Major < 6 OrElse (osVersion.Major = 6 AndAlso osVersion.Minor <= 1)
+            End Get
         End Property
     End Class
 End Namespace
