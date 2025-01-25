@@ -326,6 +326,26 @@
                         </Border>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Icon, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}" />
+                                <Condition Binding="{Binding LeftButtons, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}" />
+                                <Condition Binding="{Binding ActualWidth, ElementName=PART_MenuPlaceHolder}" Value="0" />
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.Setters>
+                                <Setter Property="Margin" TargetName="PART_TitleBarGrip" Value="-3,0,0,0" />
+                            </MultiDataTrigger.Setters>
+                        </MultiDataTrigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Icon, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}" />
+                                <Condition Binding="{Binding LeftButtons.Count, RelativeSource={RelativeSource TemplatedParent}}" Value="0" />
+                                <Condition Binding="{Binding ActualWidth, ElementName=PART_MenuPlaceHolder}" Value="0" />
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.Setters>
+                                <Setter Property="Margin" TargetName="PART_TitleBarGrip" Value="-3,0,0,0" />
+                            </MultiDataTrigger.Setters>
+                        </MultiDataTrigger>
                         <Trigger Property="ResizeMode" Value="CanResizeWithGrip">
                             <Setter Property="Visibility" TargetName="PART_SizeGrip" Value="Visible" />
                         </Trigger>

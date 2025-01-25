@@ -40,8 +40,8 @@ Namespace Controls
         Private Const SWP_NOACTIVATE As UInteger = &H10
         Private Const SWP_NOMOVE As UInteger = &H2
         Private Const SWP_NOSIZE As UInteger = &H1
-        Private Const WM_SYSCOMMAND As Integer = &H112
-        Private Const WM_NCLBUTTONDBLCLK As Integer = &HA3
+        'Private Const WM_SYSCOMMAND As Integer = &H112
+        'Private Const WM_NCLBUTTONDBLCLK As Integer = &HA3
         Private Const SC_MINIMIZE As Integer = &HF020
         Private Const SC_MAXIMIZE As Integer = &HF030
         Private Const SC_RESTORE As Integer = &HF120
@@ -1044,54 +1044,67 @@ Namespace Controls
             w.ShowActivated = False
             w.Show()
             Dim wi As WindowInteropHelper = New WindowInteropHelper(w)
-            Await Task.Delay(250)
-            SetWindowPos(
-                wi.Handle,
-                hWnd,
-                0, 0, 0, 0,
-                SWP_NOACTIVATE Or SWP_NOMOVE Or SWP_NOSIZE Or &H400
-            )
-            w.Opacity = 1
-            Await Task.Delay(50)
-            Me.Opacity = 0
-            Await Task.Delay(50)
+            wi.EnsureHandle()
+            Dim source As HwndSource = HwndSource.FromHwnd(wi.Handle)
+            Dim isOnce As Boolean
+            source.AddHook(
+                Function(hWndW As IntPtr, MSG As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
+                    Select Case MSG
+                        Case WM.WINDOWPOSCHANGING
+                            If isOnce Then Return IntPtr.Zero
+                            isOnce = True
+                            UIHelper.OnUIThread(
+                                Async Sub()
+                                    SetWindowPos(
+                                        wi.Handle,
+                                        hWnd,
+                                        0, 0, 0, 0,
+                                        SWP_NOACTIVATE Or SWP_NOMOVE Or SWP_NOSIZE Or &H400
+                                    )
+                                    w.Opacity = 1
+                                    Await Task.Delay(50)
+                                    Me.Opacity = 0
+                                    Await Task.Delay(50)
 
-            Dim ease As SineEase = New SineEase()
-            ease.EasingMode = EasingMode.EaseInOut
-            Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
-                        New Thickness(CType(w.Content, Image).Margin.Left + CType(w.Content, Image).Width * 0.05,
-                                      CType(w.Content, Image).Margin.Top + CType(w.Content, Image).Height * 0.05,
-                                      0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, CType(w.Content, Image).Width * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, CType(w.Content, Image).Height * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-            da.EasingFunction = ease
-            ta.EasingFunction = ease
-            da2.EasingFunction = ease
-            da3.EasingFunction = ease
-            AddHandler da.Completed,
-                Sub(s2 As Object, e2 As EventArgs)
-                    UIHelper.OnUIThreadAsync(
-                        Sub()
-                            w.Close()
-                            CType(w.Content, Image).Source = Nothing
-                            _closeImage = Nothing
-                            w = Nothing
+                                    Dim ease As SineEase = New SineEase()
+                                    ease.EasingMode = EasingMode.EaseInOut
+                                    Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+                                    Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
+                                        New Thickness(CType(w.Content, Image).Margin.Left + CType(w.Content, Image).Width * 0.05,
+                                                      CType(w.Content, Image).Margin.Top + CType(w.Content, Image).Height * 0.05,
+                                                      0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+                                    Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, CType(w.Content, Image).Width * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+                                    Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, CType(w.Content, Image).Height * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+                                    da.EasingFunction = ease
+                                    ta.EasingFunction = ease
+                                    da2.EasingFunction = ease
+                                    da3.EasingFunction = ease
+                                    AddHandler da.Completed,
+                                        Sub(s2 As Object, e2 As EventArgs)
+                                            UIHelper.OnUIThreadAsync(
+                                                Sub()
+                                                    w.Close()
+                                                    CType(w.Content, Image).Source = Nothing
+                                                    _closeImage = Nothing
+                                                    w = Nothing
 
-                            _isReallyClosing = True
+                                                    _isReallyClosing = True
 
-                            Me.Close()
-                        End Sub, DispatcherPriority.ContextIdle)
-                End Sub
-            w.BeginAnimation(Window.OpacityProperty, da)
-            CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
-            CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da2)
-            CType(w.Content, Image).BeginAnimation(Image.HeightProperty, da3)
+                                                    Me.Close()
+                                                End Sub, DispatcherPriority.ContextIdle)
+                                        End Sub
+                                    w.BeginAnimation(Window.OpacityProperty, da)
+                                    CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
+                                    CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da2)
+                                    CType(w.Content, Image).BeginAnimation(Image.HeightProperty, da3)
+                                End Sub)
+                    End Select
+                End Function)
         End Sub
 
         Private Function HwndHook(hwnd As IntPtr, msg As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
             Select Case msg
-                Case WM_SYSCOMMAND
+                Case WM.SYSCOMMAND
                     Select Case wParam
                         Case SC_MINIMIZE
                             If Not _isMinimized Then
@@ -1155,7 +1168,7 @@ Namespace Controls
                                 End If
                             End If
                     End Select
-                Case WM_NCLBUTTONDBLCLK
+                Case WM.NCLBUTTONDBLCLK
                     If Me.WindowState = WindowState.Maximized Then
                         handled = True
                         doRestoreFromMaximizedAnimation()
