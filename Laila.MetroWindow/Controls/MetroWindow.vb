@@ -995,7 +995,7 @@ Namespace Controls
                                 image2.Source = Nothing
                                 _maximizeImage = Nothing
                                 w = Nothing
-                            End Sub, Threading.DispatcherPriority.ContextIdle)
+                            End Sub, Threading.DispatcherPriority.Input)
                     End If
                 End Sub
             image1.BeginAnimation(Image.MarginProperty, ta2)
@@ -1006,7 +1006,6 @@ Namespace Controls
         End Sub
 
         Private Async Sub doCloseAnimation()
-            'Await Task.Delay(3000)
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
@@ -1044,67 +1043,60 @@ Namespace Controls
             w.Topmost = False
             w.Opacity = 0
             w.ShowActivated = False
+            Dim wmCount As Integer
+            AddHandler w.ContentRendered,
+                Sub(s As Object, e As EventArgs)
+                    wmCount += 1
+                    If wmCount > 1 Then Return
+                    UIHelper.OnUIThreadAsync(
+                        Async Sub()
+                            Dim wi As WindowInteropHelper = New WindowInteropHelper(w)
+                            wi.EnsureHandle()
+                            SetWindowPos(
+                                wi.Handle,
+                                hWnd,
+                                0, 0, 0, 0,
+                                SWP_NOACTIVATE Or SWP_NOMOVE Or SWP_NOSIZE Or &H400
+                            )
+                            w.Opacity = 1
+                            Await Task.Delay(50)
+                            Me.Opacity = 0
+                            Await Task.Delay(50)
+
+                            Dim ease As SineEase = New SineEase()
+                            ease.EasingMode = EasingMode.EaseInOut
+                            Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+                            Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
+                                New Thickness(CType(w.Content, Image).Margin.Left + CType(w.Content, Image).Width * 0.05,
+                                                CType(w.Content, Image).Margin.Top + CType(w.Content, Image).Height * 0.05,
+                                                0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+                            Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, CType(w.Content, Image).Width * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+                            Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, CType(w.Content, Image).Height * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
+                            da.EasingFunction = ease
+                            ta.EasingFunction = ease
+                            da2.EasingFunction = ease
+                            da3.EasingFunction = ease
+                            AddHandler da.Completed,
+                                Sub(s2 As Object, e2 As EventArgs)
+                                    UIHelper.OnUIThreadAsync(
+                                        Sub()
+                                            w.Close()
+                                            CType(w.Content, Image).Source = Nothing
+                                            _closeImage = Nothing
+                                            w = Nothing
+
+                                            _isReallyClosing = True
+
+                                            Me.Close()
+                                        End Sub, DispatcherPriority.Input)
+                                End Sub
+                            w.BeginAnimation(Window.OpacityProperty, da)
+                            CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
+                            CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da2)
+                            CType(w.Content, Image).BeginAnimation(Image.HeightProperty, da3)
+                        End Sub, DispatcherPriority.Input)
+                End Sub
             w.Show()
-            Dim wi As WindowInteropHelper = New WindowInteropHelper(w)
-            wi.EnsureHandle()
-            Dim isOnce As Boolean
-            Dim source As HwndSource = HwndSource.FromHwnd(wi.Handle)
-            source.AddHook(
-                Function(hWndW As IntPtr, MSG As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
-                    'Dim folder As String = IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
-                    'IO.File.AppendAllLines(IO.Path.Combine(folder, "wm.log"),
-                    '                               {CType(MSG, WM).ToString()})
-                    Select Case MSG
-                        Case 49620, WM.ACTIVATEAPP, WM.GETICON, WM.WINDOWPOSCHANGING ' win 7, 8.1, 10, 11
-                            If isOnce Then Return IntPtr.Zero
-                            isOnce = True
-                            UIHelper.OnUIThread(
-                                Async Sub()
-                                    SetWindowPos(
-                                        wi.Handle,
-                                        hWnd,
-                                        0, 0, 0, 0,
-                                        SWP_NOACTIVATE Or SWP_NOMOVE Or SWP_NOSIZE Or &H400
-                                    )
-                                    w.Opacity = 1
-                                    Await Task.Delay(50)
-                                    Me.Opacity = 0
-                                    Await Task.Delay(50)
-
-                                    Dim ease As SineEase = New SineEase()
-                                    ease.EasingMode = EasingMode.EaseInOut
-                                    Dim da As DoubleAnimation = New DoubleAnimation(w.Opacity, 0, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-                                    Dim ta As ThicknessAnimation = New ThicknessAnimation(CType(w.Content, Image).Margin,
-                                        New Thickness(CType(w.Content, Image).Margin.Left + CType(w.Content, Image).Width * 0.05,
-                                                      CType(w.Content, Image).Margin.Top + CType(w.Content, Image).Height * 0.05,
-                                                      0, 0), New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-                                    Dim da2 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Width, CType(w.Content, Image).Width * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-                                    Dim da3 As DoubleAnimation = New DoubleAnimation(CType(w.Content, Image).Height, CType(w.Content, Image).Height * 0.9, New Duration(TimeSpan.FromMilliseconds(CLOSE_SPEED)))
-                                    da.EasingFunction = ease
-                                    ta.EasingFunction = ease
-                                    da2.EasingFunction = ease
-                                    da3.EasingFunction = ease
-                                    AddHandler da.Completed,
-                                        Sub(s2 As Object, e2 As EventArgs)
-                                            UIHelper.OnUIThreadAsync(
-                                                Sub()
-                                                    w.Close()
-                                                    CType(w.Content, Image).Source = Nothing
-                                                    _closeImage = Nothing
-                                                    w = Nothing
-
-                                                    _isReallyClosing = True
-
-                                                    Me.Close()
-                                                End Sub, DispatcherPriority.ContextIdle)
-                                        End Sub
-                                    w.BeginAnimation(Window.OpacityProperty, da)
-                                    CType(w.Content, Image).BeginAnimation(Image.MarginProperty, ta)
-                                    CType(w.Content, Image).BeginAnimation(Image.WidthProperty, da2)
-                                    CType(w.Content, Image).BeginAnimation(Image.HeightProperty, da3)
-                                End Sub)
-                    End Select
-                End Function)
         End Sub
 
         Private Function HwndHook(hwnd As IntPtr, msg As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
