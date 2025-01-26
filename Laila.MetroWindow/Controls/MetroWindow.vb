@@ -1006,6 +1006,7 @@ Namespace Controls
         End Sub
 
         Private Async Sub doCloseAnimation()
+            'Await Task.Delay(3000)
             Dim hWnd As IntPtr = New WindowInteropHelper(Me).Handle
             _s = Forms.Screen.FromHandle(hWnd)
             _dpi = VisualTreeHelper.GetDpi(Me)
@@ -1047,15 +1048,14 @@ Namespace Controls
             Dim wi As WindowInteropHelper = New WindowInteropHelper(w)
             wi.EnsureHandle()
             Dim isOnce As Boolean
-            Dim isW7OrLower As Boolean = isWindows7OrLower
             Dim source As HwndSource = HwndSource.FromHwnd(wi.Handle)
             source.AddHook(
                 Function(hWndW As IntPtr, MSG As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
-                    Dim folder As String = IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
-                    IO.File.AppendAllLines(IO.Path.Combine(folder, "wm.log"),
-                                                   {CType(MSG, WM).ToString()})
+                    'Dim folder As String = IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
+                    'IO.File.AppendAllLines(IO.Path.Combine(folder, "wm.log"),
+                    '                               {CType(MSG, WM).ToString()})
                     Select Case MSG
-                        Case If(isW7OrLower, 49620, WM.WINDOWPOSCHANGING)
+                        Case 49620, WM.ACTIVATEAPP, WM.GETICON, WM.WINDOWPOSCHANGING ' win 7, 8.1, 10, 11
                             If isOnce Then Return IntPtr.Zero
                             isOnce = True
                             UIHelper.OnUIThread(
@@ -1337,6 +1337,14 @@ Namespace Controls
                 ' Windows 7 has version number 6.1
                 Dim osVersion As Version = Environment.OSVersion.Version
                 Return osVersion.Major < 6 OrElse (osVersion.Major = 6 AndAlso osVersion.Minor <= 1)
+            End Get
+        End Property
+
+        Private ReadOnly Property isWindows10OrLower() As Boolean
+            Get
+                ' Windows 10 has version number 10
+                Dim osVersion As Version = Environment.OSVersion.Version
+                Return osVersion.Major <= 10
             End Get
         End Property
     End Class
