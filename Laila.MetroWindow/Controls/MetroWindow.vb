@@ -550,7 +550,7 @@ Namespace Controls
         End Sub
 
         Private Sub setRootBorderPadding(Optional isCollapsed As Boolean = False)
-            If isCollapsed Then
+            If isCollapsed OrElse Not Me.DoShowChrome Then
                 Me.PART_RootBorder.Padding = New Thickness()
             Else
                 Me.PART_RootBorder.Padding = New Thickness(
