@@ -259,6 +259,9 @@ Namespace Controls
                     ' center owner
                     Dim owner As Window = If(Not Me.Owner Is Nothing, Me.Owner, Application.Current.MainWindow)
                     If Not owner Is Nothing AndAlso owner.WindowState = WindowState.Normal Then
+                        hWnd = New WindowInteropHelper(owner).Handle
+                        s = Forms.Screen.FromHandle(hWnd)
+                        g = System.Drawing.Graphics.FromHwnd(hWnd)
                         newLeft = owner.Left + owner.Width / 2 - Me.Width / 2
                         newTop = owner.Top + owner.Height / 2 - Me.Height / 2
                     ElseIf Not owner Is Nothing AndAlso owner.WindowState = WindowState.Maximized Then
@@ -266,15 +269,13 @@ Namespace Controls
                         s = Forms.Screen.FromHandle(hWnd)
                         g = System.Drawing.Graphics.FromHwnd(hWnd)
                         newLeft = s.WorkingArea.Left / (g.DpiX / 96.0) + s.WorkingArea.Width / (g.DpiX / 96.0) / 2 - Me.Width / 2
-                        newTop = s.WorkingArea.Top / (g.DpiX / 96.0) + s.WorkingArea.Height / (g.DpiX / 96.0) / 2 - Me.Height / 2
-                        g.Dispose()
+                        newTop = s.WorkingArea.Top / (g.DpiY / 96.0) + s.WorkingArea.Height / (g.DpiY / 96.0) / 2 - Me.Height / 2
                     Else
                         hWnd = New WindowInteropHelper(Me).Handle
                         s = Forms.Screen.FromHandle(hWnd)
                         g = System.Drawing.Graphics.FromHwnd(hWnd)
                         newLeft = s.WorkingArea.Left / (g.DpiX / 96.0) + s.WorkingArea.Width / (g.DpiX / 96.0) / 2 - Me.Width / 2
-                        newTop = s.WorkingArea.Top / (g.DpiX / 96.0) + s.WorkingArea.Height / (g.DpiX / 96.0) / 2 - Me.Height / 2
-                        g.Dispose()
+                        newTop = s.WorkingArea.Top / (g.DpiY / 96.0) + s.WorkingArea.Height / (g.DpiY / 96.0) / 2 - Me.Height / 2
                     End If
                 ElseIf Me.WindowStartupLocation <> WindowStartupLocation.Manual Then
                     ' center screen
@@ -283,11 +284,16 @@ Namespace Controls
                     g = System.Drawing.Graphics.FromHwnd(hWnd)
                     newLeft = (s.WorkingArea.Left + s.WorkingArea.Width / 2) / (g.DpiX / 96.0) - Me.Width / 2
                     newTop = (s.WorkingArea.Top + s.WorkingArea.Height / 2) / (g.DpiY / 96.0) - Me.Height / 2
-                    g.Dispose()
                 Else
                     ' manual
                     newLeft = Me.Left
                     newTop = Me.Top
+                End If
+
+                If Not s Is Nothing Then
+                    If newLeft < s.WorkingArea.Left / (g.DpiX / 96.0) Then newLeft = s.WorkingArea.Left / (g.DpiX / 96.0)
+                    If newTop < s.WorkingArea.Top / (g.DpiY / 96.0) Then newTop = s.WorkingArea.Top / (g.DpiY / 96.0)
+                    g.Dispose()
                 End If
 
                 Me.Left = newLeft
@@ -300,25 +306,7 @@ Namespace Controls
                     _position = New WindowPositionData()
                 Else
                     ' determine how much percent of the titlebar is visible on all screens combined
-                    Dim visiblePercent As Double = 0
-                    For Each screen In System.Windows.Forms.Screen.AllScreens
-                        Dim dpiX As UInt32, dpiY As UInt32
-                        screen.GetDpi(dpiX, dpiY)
-                        Dim rectWindow As Rect = New Rect(
-                            _position.Left / (dpiY / 96.0),
-                            _position.Top / (dpiY / 96.0),
-                            _position.Width / (dpiY / 96.0),
-                            Me.CaptionHeight / (dpiY / 96.0))
-                        Dim rectScreen As Rect = New Rect(
-                            screen.WorkingArea.X,
-                            screen.WorkingArea.Y,
-                            screen.WorkingArea.Right - screen.WorkingArea.Left,
-                            screen.WorkingArea.Bottom - screen.WorkingArea.Top)
-                        Dim intersectRect As Rect = Rect.Intersect(rectWindow, rectScreen)
-                        If Not Math.Abs(intersectRect.Width) = Double.PositiveInfinity AndAlso Not Math.Abs(intersectRect.Height) = Double.PositiveInfinity Then
-                            visiblePercent += (intersectRect.Width * intersectRect.Height) / (rectWindow.Width * rectWindow.Height) * 100
-                        End If
-                    Next
+                    Dim visiblePercent As Double = getVisiblePercent(_position)
 
                     ' if 25% or more of the titlebar is visible on all screens, restore position
                     If visiblePercent >= 25 Then
@@ -361,7 +349,7 @@ Namespace Controls
                             Me.Top = 30
                             i += 1
                         End If
-                        If Me.Left + Me.Width > s.WorkingArea.Right / (g.DpiY / 96.0) Then
+                        If Me.Left + Me.Width > s.WorkingArea.Right / (g.DpiX / 96.0) Then
                             If Not hasBeenTheEnd Then
                                 i = 1
                                 Me.Left = i * 30
@@ -386,6 +374,29 @@ Namespace Controls
                 _previousPosition = _position.Clone()
             End If
         End Sub
+
+        Private Function getVisiblePercent(pos As WindowPositionData) As Double
+            Dim visiblePercent As Double = 0
+            For Each screen In System.Windows.Forms.Screen.AllScreens
+                Dim dpiX As UInt32, dpiY As UInt32
+                screen.GetDpi(dpiX, dpiY)
+                Dim rectWindow As Rect = New Rect(
+                            pos.Left / (dpiX / 96.0),
+                            pos.Top / (dpiY / 96.0),
+                            pos.Width / (dpiX / 96.0),
+                            Me.CaptionHeight / (dpiY / 96.0))
+                Dim rectScreen As Rect = New Rect(
+                            screen.WorkingArea.X,
+                            screen.WorkingArea.Y,
+                            screen.WorkingArea.Right - screen.WorkingArea.Left,
+                            screen.WorkingArea.Bottom - screen.WorkingArea.Top)
+                Dim intersectRect As Rect = Rect.Intersect(rectWindow, rectScreen)
+                If Not Math.Abs(intersectRect.Width) = Double.PositiveInfinity AndAlso Not Math.Abs(intersectRect.Height) = Double.PositiveInfinity Then
+                    visiblePercent += (intersectRect.Width * intersectRect.Height) / (rectWindow.Width * rectWindow.Height) * 100
+                End If
+            Next
+            Return visiblePercent
+        End Function
 
         Protected Sub SetChromeWindow()
             Dim border As Double = 0
@@ -575,9 +586,9 @@ Namespace Controls
                     Dim currentScreen As System.Windows.Forms.Screen = System.Windows.Forms.Screen.FromHandle(New WindowInteropHelper(Me).Handle)
                     Dim g As System.Drawing.Graphics = System.Drawing.Graphics.FromHwndInternal(New WindowInteropHelper(Me).Handle)
                     margin = New Thickness(
-                        (currentScreen.WorkingArea.Left - currentScreen.Bounds.Left) / (g.DpiY / 96.0) + margin.Left,
+                        (currentScreen.WorkingArea.Left - currentScreen.Bounds.Left) / (g.DpiX / 96.0) + margin.Left,
                         (currentScreen.WorkingArea.Top - currentScreen.Bounds.Top) / (g.DpiY / 96.0) + margin.Top,
-                        (currentScreen.Bounds.Right - currentScreen.WorkingArea.Right) / (g.DpiY / 96.0) + margin.Right,
+                        (currentScreen.Bounds.Right - currentScreen.WorkingArea.Right) / (g.DpiX / 96.0) + margin.Right,
                         (currentScreen.Bounds.Bottom - currentScreen.WorkingArea.Bottom) / (g.DpiY / 96.0) + margin.Bottom)
                     g.Dispose()
                 End If
@@ -965,19 +976,19 @@ Namespace Controls
             ease.EasingMode = EasingMode.EaseInOut
             Dim ta0 As ThicknessAnimation = New ThicknessAnimation(
                 New Thickness((Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) + Me.PART_RootBorder.Padding.Left,
-                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) + Me.PART_RootBorder.Padding.Top,
+                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)) + Me.PART_RootBorder.Padding.Top,
                                w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right,
-                               w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                               w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)) - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             Dim ta As ThicknessAnimation = New ThicknessAnimation(
                 New Thickness((Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) + Me.PART_RootBorder.Padding.Left,
-                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) + Me.PART_RootBorder.Padding.Top,
+                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)) + Me.PART_RootBorder.Padding.Top,
                                w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width - Me.PART_RootBorder.Padding.Left - Me.PART_RootBorder.Padding.Right,
-                               w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                               w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)) - Me.Height - Me.PART_RootBorder.Padding.Top - Me.PART_RootBorder.Padding.Bottom), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             Dim ta2 As ThicknessAnimation = New ThicknessAnimation(
                 New Thickness((Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)),
-                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)),
+                              (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)),
                               w.Width - (Me.Left - _s.WorkingArea.Left / (_dpi.PixelsPerInchX / 96.0)) - Me.Width,
-                              w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchX / 96.0)) - Me.Height), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
+                              w.Height - (Me.Top - _s.WorkingArea.Top / (_dpi.PixelsPerInchY / 96.0)) - Me.Height), New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             ta2.EasingFunction = ease
             Dim da As DoubleAnimation = New DoubleAnimation(1, 0, New Duration(TimeSpan.FromMilliseconds(MAXIMIZE_SPEED)))
             da.EasingFunction = ease
@@ -1101,6 +1112,18 @@ Namespace Controls
 
         Private Function HwndHook(hwnd As IntPtr, msg As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
             Select Case msg
+                Case WM.DISPLAYCHANGE, WM.POWERBROADCAST
+                    ' determine how much percent of the titlebar is visible on all screens combined
+                    Dim visiblePercent As Double = getVisiblePercent(_position)
+
+                    ' if 25% or more of the titlebar is visible on all screens, restore position
+                    If visiblePercent < 25 Then
+                        Dim s As Forms.Screen = Forms.Screen.PrimaryScreen
+                        Dim dpiX As UInteger, dpiY As UInteger
+                        s.GetDpi(dpiX, dpiY)
+                        Me.Left = s.WorkingArea.Left / (dpiX / 96.0) + s.WorkingArea.Width / (dpiX / 96.0) / 2 - Me.Width / 2
+                        Me.Top = s.WorkingArea.Top / (dpiY / 96.0) + s.WorkingArea.Height / (dpiY / 96.0) / 2 - Me.Height / 2
+                    End If
                 Case WM.SYSCOMMAND
                     Select Case wParam
                         Case SC_MINIMIZE
