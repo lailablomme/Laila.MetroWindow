@@ -2,7 +2,6 @@
 Imports System.Collections.Specialized
 Imports System.ComponentModel
 Imports System.Globalization
-Imports System.Reflection
 Imports System.Runtime.InteropServices
 Imports System.Windows
 Imports System.Windows.Controls
